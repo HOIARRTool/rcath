@@ -24,11 +24,11 @@ app.post('/api/generate', async (req, res) => {
         return res.status(500).json({ error: { message: "API Key not configured on server." } });
     }
 
-    // --- FINAL CONFIGURATION ---
-    // ใช้ v1beta คู่กับ gemini-1.5-flash (ชื่อมาตรฐาน ไม่เติม latest)
-    // นี่คือรุ่นที่เสถียรที่สุดและฟรี
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // --- กลับมาใช้ gemini-2.5-flash ตามที่คุณต้องการ ---
+    // ใช้ v1beta เพราะรุ่นใหม่ๆ มักจะอยู่ใน beta channel
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
+    // ตั้งค่าปิด Safety Filter ทั้งหมด เพื่อให้คุยเรื่อง RCA การแพทย์/อุบัติเหตุได้
     const payload = {
         contents: [{ parts: [{ text: userPrompt }] }],
         safetySettings: [
@@ -48,15 +48,22 @@ app.post('/api/generate', async (req, res) => {
 
         const data = await response.json();
 
+        // เช็ค Error จาก Google
         if (!response.ok) {
             console.error("Gemini API Error:", JSON.stringify(data, null, 2));
-            // ส่ง Error กลับไปบอกหน้าบ้านให้ชัดเจน
+            
+            // ถ้าเจอ Error 429 (Too Many Requests / Quota Exceeded) ให้แจ้ง User ชัดๆ
+            if (response.status === 429) {
+                throw new Error("ใจเย็นๆ ครับ! โควต้าเต็ม (Quota Exceeded) กรุณารอสัก 1 นาทีแล้วกดใหม่ครับ");
+            }
+            
             throw new Error(data.error?.message || `API Error: ${data.error?.code}`);
         }
 
+        // เช็คกรณี AI บล็อคเนื้อหา
         if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
              console.error("AI blocked response:", JSON.stringify(data, null, 2));
-             throw new Error("AI refused to generate content (Safety or Empty).");
+             throw new Error("AI refused to generate content (Safety Blocked).");
         }
 
         res.json(data);
