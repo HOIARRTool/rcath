@@ -336,22 +336,47 @@
                         <h3 class="font-bold text-2xl text-slate-800">3. Christmas Tree (FTA)</h3>
                     </div>
                     <p class="text-slate-600 leading-relaxed mb-4">
-                        Also known as <strong>Fault Tree Analysis</strong>. It's a top-down approach that looks like a tree, mapping out the logical pathways (using AND/OR gates) that lead to a specific failure.
+                        <strong>Fault Tree Analysis</strong> maps logical pathways. It uses <strong>OR gates</strong> (any cause triggers effect) and <strong>AND gates</strong> (all causes must happen together).
                     </p>
                     
-                    <div class="bg-green-50 p-4 rounded-xl border border-green-200 flex flex-col items-center">
-                        <div class="bg-red-500 text-white px-4 py-2 rounded-lg font-bold text-sm mb-2 shadow-md">TOP EVENT (Accident)</div>
+                    <div class="bg-green-50 p-6 rounded-xl border border-green-200 flex flex-col items-center overflow-x-auto">
+                        
+                        <div class="bg-red-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md z-10">Patient Harm</div>
+                        <div class="h-6 w-0.5 bg-slate-400"></div>
+                        
+                        <div class="bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded z-10 relative">OR</div>
                         <div class="h-4 w-0.5 bg-slate-400"></div>
-                        <div class="bg-slate-800 text-white text-xs px-2 py-1 rounded mb-2">OR Gate</div>
-                        <div class="h-4 w-0.5 bg-slate-400"></div>
-                        <div class="w-32 h-0.5 bg-slate-400 mb-0"></div> <div class="flex justify-between w-40">
-                            <div class="flex flex-col items-center">
-                                <div class="h-2 w-0.5 bg-slate-400"></div>
-                                <div class="bg-white border border-green-500 text-green-700 px-2 py-1 rounded text-xs">Failure A</div>
+                        
+                        <div class="w-64 h-0.5 bg-slate-400"></div>
+                        
+                        <div class="flex justify-between w-80"> <div class="flex flex-col items-center w-1/2">
+                                <div class="h-4 w-0.5 bg-slate-400"></div>
+                                <div class="bg-white border-2 border-green-500 text-green-800 px-3 py-2 rounded-lg text-xs font-bold shadow-sm text-center">
+                                    Equipment<br>Failure
+                                </div>
                             </div>
-                            <div class="flex flex-col items-center">
-                                <div class="h-2 w-0.5 bg-slate-400"></div>
-                                <div class="bg-white border border-green-500 text-green-700 px-2 py-1 rounded text-xs">Failure B</div>
+
+                            <div class="flex flex-col items-center w-1/2">
+                                <div class="h-4 w-0.5 bg-slate-400"></div>
+                                <div class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded z-10 relative">AND</div>
+                                <div class="h-4 w-0.5 bg-slate-400"></div>
+                                
+                                <div class="w-32 h-0.5 bg-slate-400"></div>
+                                
+                                <div class="flex justify-between w-40">
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-3 w-0.5 bg-slate-400"></div>
+                                        <div class="bg-white border border-green-500 text-green-700 px-2 py-1 rounded text-[10px] text-center">
+                                            Nurse<br>Fatigue
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-3 w-0.5 bg-slate-400"></div>
+                                        <div class="bg-white border border-green-500 text-green-700 px-2 py-1 rounded text-[10px] text-center">
+                                            Similar<br>Drug Name
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
