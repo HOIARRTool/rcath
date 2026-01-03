@@ -879,6 +879,29 @@
                 throw error; 
             }
         }
+        function sanitizeLLMHtml(text) {
+          return String(text ?? "")
+            .replace(/```(?:html)?/gi, "")
+            .replace(/```/g, "")
+            .trim();
+        }
+        
+        function stripHtml(html) {
+          const tmp = document.createElement("div");
+          tmp.innerHTML = html;
+          return (tmp.textContent || tmp.innerText || "").trim();
+        }
+        
+        function looksLikeRiskAnalysis(html) {
+          // เช็ค signature ที่ “ควรมี” ตาม prompt
+          return (
+            html.includes("1. Event Summary") &&
+            html.includes("Fishbone Diagram") &&
+            html.includes("5 Whys") &&
+            html.includes("Swiss Cheese") &&
+            html.length > 300
+          );
+        }
 
         // --- 1. Combined Workflow Starter ---
         async function startFullAnalysis() {
