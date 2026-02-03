@@ -29,8 +29,10 @@
             }
         }
 
+        /* ปรับปรุง CSS ตารางให้ยืดหยุ่น */
         .rca-table, .action-table, .initiative-table {
             width: 100%;
+            min-width: 600px; /* บังคับความกว้างขั้นต่ำไม่ให้ตัวหนังสือโดนบีบ */
             border-collapse: collapse;
             font-size: 0.875rem;
             margin-top: 10px;
@@ -38,17 +40,19 @@
         }
         .rca-table th, .action-table th, .initiative-table th {
             color: white;
-            padding: 10px;
+            padding: 12px 10px;
             text-align: left;
             border: 1px solid #e2e8f0;
+            white-space: nowrap; /* หัวตารางไม่ตัดบรรทัด */
         }
         .rca-table th { background-color: #F59E0B; }
         .action-table th { background-color: #0EA5E9; }
         .initiative-table th { background-color: #7C3AED; }
         .rca-table td, .action-table td, .initiative-table td {
             border: 1px solid #e2e8f0;
-            padding: 10px;
+            padding: 12px 10px;
             vertical-align: top;
+            line-height: 1.5;
         }
         tr:nth-child(even) { background-color: #f8fafc; }
 
@@ -183,7 +187,7 @@
                                     <span>🔍 วิเคราะห์รากเหง้าปัญหา (RCA)</span>
                                 </button>
                                 
-                                <div id="analyzeResult" class="mt-4 p-4 bg-white rounded-xl text-sm text-slate-700 hidden border border-amber-100 shadow-inner"></div>
+                                <div id="analyzeResult" class="mt-4 p-4 bg-white rounded-xl text-sm text-slate-700 hidden border border-amber-100 shadow-inner overflow-x-auto"></div>
                             </div>
                         </div>
                         <div class="bg-blue-50 rounded-2xl p-6 border-2 border-blue-100 shadow-md relative overflow-hidden h-full lg:col-span-2">
@@ -312,16 +316,18 @@
                     <p class="text-slate-600 leading-relaxed mb-4">
                         การแยกแยะพฤติกรรมเพื่อการบริหารจัดการที่เหมาะสม (ปลอบโยน, สอนงาน, หรือลงโทษ)
                     </p>
-                    <table class="w-full text-sm text-left border border-slate-200 rounded-lg overflow-hidden">
-                        <thead class="bg-slate-100 font-bold">
-                            <tr><th class="p-2 border-b">พฤติกรรม</th><th class="p-2 border-b">การจัดการ</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-b bg-green-50"><td class="p-2 font-bold text-green-700">Human Error (พลั้งเผลอ)</td><td class="p-2">Console (ปลอบโยน/ปรับระบบ)</td></tr>
-                            <tr class="border-b bg-yellow-50"><td class="p-2 font-bold text-yellow-700">At-Risk (เสี่ยงโดยไม่ตั้งใจ)</td><td class="p-2">Coach (สอนงาน/เตือน)</td></tr>
-                            <tr class="bg-red-50"><td class="p-2 font-bold text-red-700">Reckless (จงใจฝ่าฝืน)</td><td class="p-2">Punish (ลงโทษตามเกณฑ์)</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border border-slate-200 rounded-lg overflow-hidden">
+                            <thead class="bg-slate-100 font-bold">
+                                <tr><th class="p-2 border-b">พฤติกรรม</th><th class="p-2 border-b">การจัดการ</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b bg-green-50"><td class="p-2 font-bold text-green-700">Human Error (พลั้งเผลอ)</td><td class="p-2">Console (ปลอบโยน/ปรับระบบ)</td></tr>
+                                <tr class="border-b bg-yellow-50"><td class="p-2 font-bold text-yellow-700">At-Risk (เสี่ยงโดยไม่ตั้งใจ)</td><td class="p-2">Coach (สอนงาน/เตือน)</td></tr>
+                                <tr class="bg-red-50"><td class="p-2 font-bold text-red-700">Reckless (จงใจฝ่าฝืน)</td><td class="p-2">Punish (ลงโทษตามเกณฑ์)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
