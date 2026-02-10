@@ -1173,9 +1173,9 @@
           `;
         }).join("");
 
-        const headLines = wrapByChars(effect, 14, 3).map(escapeXML);
+        const headLines = wrapByChars(effect, 22, 4).map(escapeXML);
         const headTspans = headLines.map((t, i) =>
-          `<tspan x="${box.x + box.w / 2}" dy="${i === 0 ? 0 : 20}">${t}</tspan>`
+          `<tspan x="${box.x + box.w / 2}" dy="${i === 0 ? 0 : 18}">${t}</tspan>`
         ).join("");
 
         return `
@@ -1205,7 +1205,7 @@
             </text>
 
             <text x="${box.x + box.w / 2}" y="${box.y + 78}"
-                  font-family="sans-serif" font-size="18" font-weight="900"
+                  font-family="sans-serif" font-size="14" font-weight="900"
                   fill="#0F172A" text-anchor="middle" style="${textShieldStyle}">
               ${headTspans}
             </text>
