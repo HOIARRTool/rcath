@@ -1,888 +1,1428 @@
+````html
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E">
-    <title>RCA Insight Companion | ระบบวิเคราะห์รากเหง้าปัญหา</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #F8FAFC;
-            color: #334155;
-        }
-        
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 100%;
-            height: 300px;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ผู้ช่วยอินไซต์ RCA</title>
 
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 500px; 
-            }
-        }
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-        /* ปรับปรุง CSS ตารางให้แผ่กว้างเต็มพื้นที่และรองรับการ Scroll */
-        .rca-table, .action-table, .initiative-table {
-            width: 100%;
-            min-width: 900px; /* เพิ่มจาก 600px เป็น 900px เพื่อให้แผ่กว้างเต็มตา */
-            border-collapse: collapse;
-            font-size: 0.95rem; /* ปรับตัวหนังสือให้ใหญ่ขึ้นนิดนึงเพื่อให้สมกับความกว้าง */
-            margin-top: 10px;
-            margin-bottom: 20px;
-            background-color: white;
-        }
-        .rca-table th, .action-table th, .initiative-table th {
-            color: white;
-            padding: 15px 12px; /* เพิ่มพื้นที่หายใจให้หัวตาราง */
-            text-align: left;
-            border: 1px solid #e2e8f0;
-            white-space: nowrap; 
-        }
-        .rca-table th { background-color: #F59E0B; }
-        .action-table th { background-color: #0EA5E9; }
-        .initiative-table th { background-color: #7C3AED; }
-        .rca-table td, .action-table td, .initiative-table td {
-            border: 1px solid #e2e8f0;
-            padding: 15px 12px;
-            vertical-align: top;
-            line-height: 1.6; /* ปรับบรรทัดให้อ่านง่ายขึ้น */
-        }
-        tr:nth-child(even) { background-color: #f8fafc; }
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-        .fishbone-grid {
-            display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        @media (min-width: 768px) {
-            .fishbone-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        .fishbone-card {
-            background-color: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .fishbone-header {
-            font-weight: bold;
-            color: #475569;
-            border-bottom: 2px solid #cbd5e1;
-            padding-bottom: 0.5rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+  <style>
+    /* ทำให้ตาราง PDSA ไม่กินครึ่งจอ */
+    .pdsatable { width: 100%; table-layout: auto; }
+    .pdsatable th, .pdsatable td { vertical-align: top; }
+    .pdsatable th:first-child,
+    .pdsatable td:first-child{
+      width: 110px;          /* ปรับเป็น 90-140 ได้ตามชอบ */
+      white-space: nowrap;   /* ไม่ให้คำว่า Plan/Do แตกบรรทัด (ถ้าแสดงภาษาอังกฤษ) */
+    }
+    .pdsatable td:nth-child(2){ width: auto; }
+    body { font-family: 'Noto Sans Thai', sans-serif; background-color: #F8FAFC; }
+    .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #0EA5E9; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .why-step {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 0.5rem;
-            position: relative;
-        }
-        .why-number {
-            background-color: #EC4899; 
-            color: white;
-            font-weight: bold;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.75rem;
-            margin-right: 0.75rem;
-            flex-shrink: 0;
-            z-index: 10;
-        }
-        .why-line {
-            position: absolute;
-            left: 11px;
-            top: 24px;
-            bottom: -10px;
-            width: 2px;
-            background-color: #FBCFE8; 
-            z-index: 0;
-        }
-        .why-step:last-child .why-line {
-            display: none;
-        }
+    /* ความสูงของคอนเทนเนอร์กราฟ (Chart.js maintainAspectRatio:false ต้องมีความสูง) */
+    .chart-container { position: relative; width: 100%; height: 360px; }
+    @media (max-width: 640px) { .chart-container { height: 320px; } }
 
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 3px solid #0EA5E9;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        html { scroll-behavior: smooth; }
-    </style>
+    /* กล่องผลลัพธ์: Desktop ไม่ให้ตารางดันล้น / Mobile ยังเลื่อนได้ */
+    #analyzeResult, #planResult {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 768px) {
+      #analyzeResult, #planResult { overflow-x: auto; }
+    }
+
+    /* ✅ สำคัญ: ตารางเต็มความกว้างและหักบรรทัดบน Desktop */
+    table {
+      width: 100% !important;
+      max-width: 100% !important;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    th, td {
+      vertical-align: top;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    /* ผลลัพธ์ก้างปลา (ข้อความ) รองรับแน่ ๆ */
+    .fishbone-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    @media (min-width: 768px) {
+      .fishbone-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .fishbone-card {
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .fishbone-header {
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    /* ขั้นทำไม-ทำไม (UI สวยขึ้น + คงรูป) */
+    .why-step { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; }
+    .why-number {
+      width: 24px; height: 24px; border-radius: 9999px;
+      background: #fff; border: 2px solid #F472B6;
+      color: #BE185D; font-weight: 800; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex: 0 0 auto;
+    }
+    .why-line { width: 2px; background: #F9A8D4; margin-top: 24px; margin-left: 11px; height: 18px; flex: 0 0 auto; }
+
+    /* เส้นไทม์ไลน์ (โรดแมป) */
+    .timeline-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #CBD5E1;
+    }
+    /* ✅ SVG ก้างปลา: กันโดนบีบบนจอแคบ */
+    .fishbone-viz-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .fishbone-viz-wrap svg { min-width: 980px; }
+
+    @media (max-width: 640px) {
+      h2 { font-size: 1.25rem !important; line-height: 1.4 !important; }
+      .md\:p-10 { padding: 1rem !important; }
+      .p-6 { padding: 1rem !important; }
+      table td, table th {
+        font-size: 0.75rem !important;
+        padding: 8px 6px !important;
+      }
+    }
+  </style>
 </head>
+
 <body class="bg-slate-50">
-    <header class="relative w-full h-64 bg-gradient-to-r from-slate-800 to-slate-900 shadow-xl overflow-hidden mb-8 flex items-center justify-center">
-      <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-        <div class="absolute top-10 left-10 w-64 h-64 bg-teal-500 rounded-full filter blur-3xl"></div>
-        <div class="absolute bottom-10 right-10 w-64 h-64 bg-blue-500 rounded-full filter blur-3xl"></div>
-      </div>
-    
-      <div class="relative z-10 text-center px-4 md:px-20 mt-4">
-        <h1 class="text-white font-bold text-xs md:text-sm lg:text-base leading-relaxed tracking-wide shadow-black drop-shadow-md">
-          การลดช่องว่างด้านคุณภาพ: การประเมินชุดเครื่องมือ RCA สนับสนุนโดย AI ในระบบสาธารณสุขเอเชีย<br>
-          <span class="text-slate-300 font-medium">– ความร่วมมือระหว่าง ไทย, ไต้หวัน, เมียนมา, มาเลเซีย, บรูไน และฟิลิปปินส์ –</span>
-        </h1>
-      </div>
-    
-      <div class="absolute top-6 right-6 flex items-center gap-4 z-20">            
-        <div class="flex gap-2">
-            <img src="https://flagcdn.com/h40/th.png" alt="Thailand" class="h-6 rounded shadow-lg opacity-90">
-            <img src="https://flagcdn.com/h40/tw.png" alt="Taiwan" class="h-6 rounded shadow-lg opacity-90">
-            <img src="https://flagcdn.com/h40/mm.png" alt="Myanmar" class="h-6 rounded shadow-lg opacity-90">
-            <img src="https://flagcdn.com/h40/ph.png" alt="Philippines" class="h-6 rounded shadow-lg opacity-90">
-            <img src="https://flagcdn.com/h40/my.png" alt="Malaysia" class="h-6 rounded shadow-lg opacity-90">
-            <img src="https://flagcdn.com/h40/bn.png" alt="Brunei" class="h-6 rounded shadow-lg opacity-90">
+
+  <main class="w-full px-4 2xl:px-12 pt-10 pb-16 relative z-20">
+
+    <section id="ai-lab">
+      <div class="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-1 shadow-2xl overflow-hidden">
+        <div class="bg-white rounded-[20px] p-6 md:p-10">
+
+          <div class="text-center mb-10">
+            <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">การสนับสนุนแบบโต้ตอบ</span>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-slate-800 mt-4 mb-2 flex items-center justify-center gap-3">
+              <span>✨</span> ผู้ช่วยอินไซต์สำหรับ RCA
+            </h2>
+            <p class="text-slate-500 max-w-2xl mx-auto">
+              คู่หูของคุณสำหรับการเรียนรู้เชิงลึก การวิเคราะห์รากสาเหตุ (RCA) และการร่วมกันสร้างระบบที่ปลอดภัยยิ่งขึ้น
+            </p>
+          </div>
+
+          <!-- ✅ Desktop: คอลัมน์เดียวเต็มหน้าจอ -->
+          <div class="flex flex-col gap-8 w-full">
+
+            <!-- ขั้นตอน 1 -->
+            <div class="space-y-6 w-full">
+              <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm w-full">
+                <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                  <span class="text-2xl">🏥</span> 1. รายงานความเสี่ยงหรืออุบัติการณ์ของโรงพยาบาล
+                </h3>
+
+                <textarea id="scenarioInput"
+                  class="w-full p-4 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none mb-4 bg-white"
+                  rows="6"
+                  placeholder="กรอกรายละเอียดอุบัติการณ์/เหตุการณ์..."></textarea>
+
+                <button id="combinedRunButton"
+                  onclick="startFullAnalysis()"
+                  class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 transform active:scale-95">
+                  <span id="runSpinner" class="loader hidden border-white border-t-transparent"></span>
+                  <span>🔍 เริ่มวิเคราะห์ RCA</span>
+                </button>
+
+                <div id="analyzeResult" class="hidden mt-4 p-4 text-sm text-slate-700 bg-white rounded-xl border border-amber-100 w-full"></div>
+              </div>
+            </div>
+
+            <!-- ขั้นตอน 2 -->
+            <div class="bg-blue-50 rounded-2xl p-6 border-2 border-blue-100 shadow-md relative overflow-hidden h-full w-full">
+              <div class="absolute top-0 right-0 bg-blue-200 text-blue-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg">ขั้นตอน 2 (อัตโนมัติ)</div>
+              <h3 class="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
+                <span class="text-2xl">🎯</span> 2. วิเคราะห์ความเสี่ยงและแผนปฏิบัติการ
+              </h3>
+              <p class="text-xs text-blue-700 mb-4">
+                ระบบจะสร้าง <strong>PDSA / Action Plan / Initiative Ideas / Conclusion & Recommendations</strong> จำนวน 4 ส่วน
+              </p>
+
+              <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">ข้อมูลนำเข้า:</label>
+              <textarea id="planInput"
+                class="w-full p-4 border border-blue-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 bg-white mb-4 shadow-inner font-mono text-slate-600"
+                placeholder="กำลังรอผลการวิเคราะห์..."></textarea>
+
+              <div class="flex gap-2">
+                <button onclick="exportToWord()"
+                  class="w-full bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 font-bold py-3 px-4 rounded-xl transition shadow-md flex justify-center items-center gap-2 transform active:scale-95"
+                  title="ส่งออกเป็นไฟล์ Word">
+                  <span class="text-lg">📄</span>
+                  <span class="md:inline">ส่งออกเป็น Word</span>
+                </button>
+              </div>
+
+              <div class="mt-6 rounded-xl border border-blue-100 bg-white shadow-lg overflow-hidden w-full">
+                <div id="planResult" class="hidden p-5 text-sm text-slate-700 min-h-[100px] w-full"></div>
+              </div>
+            </div>
+
+          </div>
+          <!-- /แผงขั้นตอน -->
+
         </div>
       </div>
-    </header>
 
+      <div class="mt-20 flex items-center justify-center">
+        <div class="h-px w-24 bg-slate-300"></div>
+        <span class="px-4 text-slate-400 text-sm font-semibold tracking-wider uppercase">องค์ความรู้เชิงลึก</span>
+        <div class="h-px w-24 bg-slate-300"></div>
+      </div>
+    </section>
 
-    <main class="w-full max-w-none px-0 -mt-20 pb-16 space-y-24 relative z-20 rounded-3xl overflow-hidden">
-
-        <section id="ai-lab">
-            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-1 shadow-2xl transform hover:scale-[1.01] transition-transform duration-300">
-                <div class="bg-white rounded-[20px] p-6 md:p-10">
-                    <div class="text-center mb-10">
-                        <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">ระบบสนับสนุนอัจฉริยะ</span>
-                        <h2 class="text-3xl md:text-4xl font-extrabold text-slate-800 mt-4 mb-2 flex items-center justify-center gap-3">
-                            <span>✨</span> RCA Insight Companion
-                        </h2>
-                        <p class="text-slate-500 max-w-2xl mx-auto">
-                            ส่งเสริมการเรียนรู้เชิงลึก การวิเคราะห์รากเหง้าปัญหา และการสร้างระบบที่ปลอดภัยยิ่งขึ้น
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-                        <div class="space-y-8 lg:col-span-4">
-                            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
-                                <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
-                                    <span class="text-2xl">🏥</span> 1. รายงานอุบัติการณ์/ความเสี่ยง
-                                </h3>
-                                <p class="text-xs text-slate-500 mb-3">ระบุรายละเอียดเหตุการณ์ที่เกิดขึ้น เพื่อให้ระบบช่วยวิเคราะห์สาเหตุ</p>
-                                <textarea id="scenarioInput" class="w-full p-4 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none transition shadow-inner mb-4 bg-white" rows="6" placeholder="ตัวอย่าง: พยาบาลบริหารยาผิดเนื่องจากบรรจุภัณฑ์คล้ายกันและภาระงานสูง..."></textarea>
-                                
-                                <button id="combinedRunButton" onclick="startFullAnalysis()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg flex justify-center items-center gap-2 transform active:scale-95">
-                                    <span id="runSpinner" class="loader hidden border-white border-t-green-800"></span>
-                                    <span>🔍 วิเคราะห์รากเหง้าปัญหา (RCA)</span>
-                                </button>
-                                
-                                <div id="analyzeResult" class="mt-4 p-4 bg-white rounded-xl text-sm text-slate-700 hidden border border-amber-100 shadow-inner overflow-x-auto"></div>
-                            </div>
-                        </div>
-                        <div class="bg-blue-50 rounded-2xl p-8 border-2 border-blue-100 shadow-md relative overflow-hidden h-full lg:col-span-8">
-                            <div class="absolute top-0 right-0 bg-blue-200 text-blue-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg">ขั้นตอนที่ 2 (อัตโนมัติ)</div>
-                            <h3 class="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
-                                <span class="text-2xl">🎯</span> 2. แผนปฏิบัติการและแนวทางแก้ไข
-                            </h3>
-                            <p class="text-xs text-blue-700 mb-4">ระบบจะสร้าง 3 ส่วนสำคัญ: วงจร PDSA, แผนปฏิบัติการโดยละเอียด และนวัตกรรมเพื่อความปลอดภัย</p>
-                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">สถานะข้อมูล:</label>
-                            <textarea id="planInput" class="w-full p-4 border border-blue-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 bg-white mb-4 shadow-inner font-mono text-slate-600" readonly placeholder="รอผลการวิเคราะห์จากขั้นตอนที่ 1..."></textarea>
-                            <div class="flex gap-2">
-                                <button onclick="exportToWord()" class="w-full bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 font-bold py-3 px-4 rounded-xl transition shadow-md flex justify-center items-center gap-2 transform active:scale-95" title="ส่งออกเป็นไฟล์ Word">
-                                    <span class="text-lg">📄</span>
-                                    <span class="md:inline">ส่งออก Word</span>
-                                </button>
-                            </div>
-                            <div id="planResult" class="mt-6 p-5 bg-white rounded-xl text-sm text-slate-700 border border-blue-100 shadow-lg min-h-[100px] hidden overflow-x-auto"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-20 flex items-center justify-center">
-                <div class="h-px w-24 bg-slate-300"></div>
-                <span class="px-4 text-slate-400 text-sm font-semibold tracking-wider uppercase">คลังความรู้เชิงลึก</span>
-                <div class="h-px w-24 bg-slate-300"></div>
-            </div>
-        </section>
-
-        <section>
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-slate-800">1. แนวคิดหลักในการวิเคราะห์</h2>
-                <div class="h-1 w-20 bg-teal-500 mx-auto mt-4 rounded-full"></div>
-                <p class="text-slate-600 mt-4 max-w-3xl mx-auto">
-                    ทำความเข้าใจเสาหลักด้านความปลอดภัย เพื่อให้เห็นภาพว่า "อุบัติเหตุเกิดขึ้นได้อย่างไร" และ "จะป้องกันได้อย่างไร" โดยไม่มุ่งเน้นการโทษบุคคล
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-
-                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-cyan-500 hover:shadow-xl transition group">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="text-4xl">🐟</span>
-                        <h3 class="font-bold text-2xl text-slate-800">1. ผังก้างปลา (Ishikawa)</h3>
-                    </div>
-                    <p class="text-slate-600 leading-relaxed mb-6">
-                        <strong>ดร. คาโอรุ อิชิกาวะ</strong> พัฒนาเครื่องมือนี้เพื่อหา RCA ในงานสาธารณสุข เรามุ่งเน้นที่ <strong>6 Ms</strong>:
-                    </p>
-                    
-                    <div class="w-full overflow-hidden bg-slate-50 rounded-xl border border-slate-200 p-2 mb-4 flex justify-center">
-                        <svg viewBox="0 0 800 350" class="w-full h-auto drop-shadow-sm">
-                            <line x1="50" y1="175" x2="650" y2="175" stroke="#334155" stroke-width="4" />
-                            
-                            <polygon points="650,130 790,175 650,220" fill="#0EA5E9" />
-                            
-                            <text x="705" y="182" font-family="Sarabun" font-size="18" font-weight="bold" fill="white" text-anchor="middle">ปัญหา</text>
-                            
-                            <line x1="150" y1="50" x2="200" y2="175" stroke="#64748B" stroke-width="2" />
-                            <rect x="100" y="20" width="100" height="30" rx="5" fill="white" stroke="#64748B" />
-                            <text x="150" y="40" font-family="Sarabun" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">บุคลากร</text>
-                            
-                            <line x1="350" y1="50" x2="400" y2="175" stroke="#64748B" stroke-width="2" />
-                            <rect x="300" y="20" width="100" height="30" rx="5" fill="white" stroke="#64748B" />
-                            <text x="350" y="40" font-family="Sarabun" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">เครื่องมือ</text>
-                    
-                            <line x1="550" y1="50" x2="600" y2="175" stroke="#64748B" stroke-width="2" />
-                            <rect x="500" y="20" width="100" height="30" rx="5" fill="white" stroke="#64748B" />
-                            <text x="550" y="40" font-family="Sarabun" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">วิธีการ</text>
-                    
-                            <line x1="150" y1="300" x2="200" y2="175" stroke="#64748B" stroke-width="2" />
-                            <rect x="100" y="300" width="100" height="30" rx="5" fill="white" stroke="#64748B" />
-                            <text x="150" y="320" font-family="Sarabun" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">วัสดุอุปกรณ์</text>
-                    
-                            <line x1="450" y1="300" x2="500" y2="175" stroke="#64748B" stroke-width="2" />
-                            <rect x="400" y="300" width="120" height="30" rx="5" fill="white" stroke="#64748B" />
-                            <text x="460" y="320" font-family="Sarabun" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">สิ่งแวดล้อม</text>
-                        </svg>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 bg-cyan-50 p-4 rounded-xl border border-cyan-100">
-                        <div><strong class="text-cyan-800">1. Man (คน):</strong> สมรรถนะ, ความล้า, ความเครียด, อัตรากำลัง</div>
-                        <div><strong class="text-cyan-800">2. Machine (เครื่องมือ):</strong> การชำรุด, การสอบเทียบ, การบำรุงรักษา</div>
-                        <div><strong class="text-cyan-800">3. Method (วิธี):</strong> SOP ไม่ชัดเจน, แนวทางเก่าเกินไป, การสื่อสาร</div>
-                        <div><strong class="text-cyan-800">4. Material (วัสดุ):</strong> เวชภัณฑ์บกพร่อง, แพ็กเกจคล้ายกัน, คุณภาพต่ำ</div>
-                        <div><strong class="text-cyan-800">5. Environment (สิ่งแวดล้อม):</strong> เสียงรบกวน, แสงสว่าง, เลย์เอาต์, อุณหภูมิ</div>
-                        <div><strong class="text-cyan-800">6. Measurement:</strong> ความแม่นยำของข้อมูล, การแปลผลแล็บ</div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-pink-500 hover:shadow-xl transition group">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="text-4xl">❓</span>
-                        <h3 class="font-bold text-2xl text-slate-800">2. เทคนิค 5 Whys</h3>
-                    </div>
-                    <p class="text-slate-600 leading-relaxed mb-4">
-                        พัฒนาโดย <strong>Sakichi Toyoda</strong> (Toyota) เป็นการถาม "ทำไม" ซ้ำๆ เพื่อเจาะลึกลงไปถึงต้นตอที่แท้จริงของปัญหา
-                    </p>
-                    <div class="bg-pink-50 p-4 rounded-lg border border-pink-100">
-                        <strong class="text-pink-800 block mb-2 text-sm">ตัวอย่าง: ผู้ป่วยพลัดตกหกล้ม</strong>
-                        <div class="space-y-0">
-                            <div class="why-step"><div class="why-number">1</div><div class="why-line"></div><div class="text-sm text-slate-700 pt-1">ทำไม? พื้นเปียก</div></div>
-                            <div class="why-step"><div class="why-number">2</div><div class="why-line"></div><div class="text-sm text-slate-700 pt-1">ทำไม? ท่อน้ำรั่ว</div></div>
-                            <div class="why-step"><div class="why-number">3</div><div class="why-line"></div><div class="text-sm text-slate-700 pt-1">ทำไม? ซีลยางเสื่อมคุณภาพ</div></div>
-                            <div class="why-step"><div class="why-number">4</div><div class="why-line"></div><div class="text-sm text-slate-700 pt-1">ทำไม? ซื้อรุ่นราคาถูกที่ไม่มีคุณภาพ</div></div>
-                            <div class="why-step"><div class="why-number">5</div><div class="text-sm text-slate-700 pt-1 font-bold text-pink-700">รากเหง้า: นโยบายจัดซื้อเน้นราคาต่ำสุดมากกว่าคุณภาพ</div></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-green-600 hover:shadow-xl transition group">
-                  <div class="flex items-center gap-3 mb-4">
-                    <span class="text-4xl">🎄</span>
-                    <h3 class="font-bold text-2xl text-slate-800">3. Christmas Tree Diagram (FTA)</h3>
-                  </div>
-                
-                  <p class="text-xs text-slate-500 mb-3">Visual map of failure pathways</p>
-                
-                  <div class="bg-green-50 p-6 rounded-xl border border-green-200 flex flex-col items-center overflow-x-auto">
-                    <div class="bg-red-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md z-10 text-center">...Identify Top Event (Accident)...</div>
-                    <div class="h-6 w-0.5 bg-slate-400"></div>
-                
-                    <div class="bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded z-10 relative">OR</div>
-                    <div class="h-4 w-0.5 bg-slate-400"></div>
-                
-                    <div class="w-64 h-0.5 bg-slate-400"></div>
-                
-                    <div class="flex justify-between w-full max-w-md gap-4">
-                      <div class="flex flex-col items-center w-1/2">
-                        <div class="h-4 w-0.5 bg-slate-400"></div>
-                        <div class="bg-white border-2 border-green-500 text-green-800 px-3 py-2 rounded-lg text-xs font-bold shadow-sm text-center">
-                          ...Immediate Cause A...
-                        </div>
-                      </div>
-                
-                      <div class="flex flex-col items-center w-1/2">
-                        <div class="h-4 w-0.5 bg-slate-400"></div>
-                        <div class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded z-10 relative">AND</div>
-                        <div class="h-4 w-0.5 bg-slate-400"></div>
-                
-                        <div class="w-24 h-0.5 bg-slate-400"></div>
-                
-                        <div class="flex justify-between w-full gap-2">
-                          <div class="flex flex-col items-center">
-                            <div class="h-3 w-0.5 bg-slate-400"></div>
-                            <div class="bg-white border border-green-500 text-green-700 px-2 py-1 rounded text-[10px] text-center">...Root Cause 1...</div>
-                          </div>
-                          <div class="flex flex-col items-center">
-                            <div class="h-3 w-0.5 bg-slate-400"></div>
-                            <div class="bg-white border border-green-500 text-green-700 px-2 py-1 rounded text-[10px] text-center">...Root Cause 2...</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-amber-500 hover:shadow-xl transition group">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="text-4xl">🧀</span>
-                        <h3 class="font-bold text-2xl text-slate-800">4. Swiss Cheese Model</h3>
-                    </div>
-                    <p class="text-slate-600 leading-relaxed mb-6">
-                        <strong>แบบจำลองของ James Reason:</strong> อุบัติเหตุเกิดขึ้นเมื่อ "รู" (จุดอ่อน) ในการป้องกันหลายๆ ชั้นเรียงตรงกันพอดี
-                    </p>
-
-                    <div class="w-full overflow-hidden bg-slate-50 rounded-xl border border-slate-200 p-6 mb-6 flex justify-center">
-                        <svg viewBox="0 0 800 320" class="w-full h-auto drop-shadow-sm">
-                            <defs>
-                                <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                    <polygon points="0 0, 10 3.5, 0 7" fill="#EF4444" />
-                                </marker>
-                            </defs>
-
-                            <line x1="50" y1="140" x2="720" y2="140" stroke="#EF4444" stroke-width="4" stroke-dasharray="10,5" marker-end="url(#arrowRed)" />
-                            <text x="50" y="120" font-family="sans-serif" font-size="14" font-weight="bold" fill="#EF4444">HAZARD</text>
-
-                            <g transform="translate(150, 40)">
-                                <rect x="0" y="0" width="70" height="200" rx="4" fill="#FEF3C7" stroke="#334155" stroke-width="2" />
-                                <circle cx="35" cy="40" r="10" fill="white" stroke="#334155" stroke-width="1" />
-                                <circle cx="20" cy="180" r="8" fill="white" stroke="#334155" stroke-width="1" />
-                                <circle cx="35" cy="100" r="15" fill="white" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,2" />
-                                <text x="35" y="230" font-family="sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">Policy</text>
-                            </g>
-
-                            <g transform="translate(300, 40)">
-                                <rect x="0" y="0" width="70" height="200" rx="4" fill="#FDE68A" stroke="#334155" stroke-width="2" />
-                                <circle cx="20" cy="50" r="9" fill="white" stroke="#334155" stroke-width="1" />
-                                <circle cx="50" cy="160" r="11" fill="white" stroke="#334155" stroke-width="1" />
-                                <circle cx="35" cy="100" r="15" fill="white" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,2" />
-                                <text x="35" y="230" font-family="sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">Supervision</text>
-                            </g>
-
-                            <g transform="translate(450, 40)">
-                                <rect x="0" y="0" width="70" height="200" rx="4" fill="#FCD34D" stroke="#334155" stroke-width="2" />
-                                <circle cx="45" cy="30" r="8" fill="white" stroke="#334155" stroke-width="1" />
-                                <circle cx="25" cy="170" r="10" fill="white" stroke="#334155" stroke-width="1" />
-                                <circle cx="35" cy="100" r="15" fill="white" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,2" />
-                                <text x="35" y="230" font-family="sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">Conditions</text>
-                            </g>
-
-                            <g transform="translate(600, 40)">
-                                <rect x="0" y="0" width="70" height="200" rx="4" fill="#F59E0B" stroke="#334155" stroke-width="2" />
-                                <circle cx="20" cy="60" r="12" fill="white" stroke="#334155" stroke-width="1" />
-                                <circle cx="50" cy="150" r="9" fill="white" stroke="#334155" stroke-width="1" />
-                                <circle cx="35" cy="100" r="15" fill="white" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,2" />
-                                <text x="35" y="230" font-family="sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">Action</text>
-                            </g>
-
-                            <g transform="translate(740, 140)">
-                                <path d="M0 -20 L5 -5 L20 0 L5 5 L0 20 L-5 5 L-20 0 L-5 -5 Z" fill="#EF4444" stroke="#991B1B" stroke-width="2" />
-                                <text x="0" y="40" font-family="sans-serif" font-size="14" font-weight="bold" fill="#EF4444" text-anchor="middle">LOSS</text>
-                            </g>
-                        </svg>
-                    </div>
-                    
-                    <div class="bg-amber-50 p-4 rounded-xl border border-amber-100 text-xs text-slate-600 space-y-2">
-                        <p><strong>1. Organizational Influences:</strong> อิทธิพลจากองค์กร เช่น นโยบาย, วัฒนธรรม</p>
-                        <p><strong>2. Unsafe Supervision:</strong> การกำกับดูแลที่ไม่ปลอดภัย เช่น ฝึกอบรมไม่พอ</p>
-                        <p><strong>3. Preconditions:</strong> ปัจจัยก่อนเกิดเหตุ เช่น ความเครียด, ภาระงานหนัก</p>
-                        <p><strong>4. Unsafe Acts:</strong> การกระทำที่ไม่ปลอดภัย เช่น ความพลั้งเผลอ, การทำผิดขั้นตอน</p>
-                    </div>
-                </div>
-
-                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-teal-500 hover:shadow-xl transition group">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="text-4xl">⚖️</span>
-                        <h3 class="font-bold text-2xl text-slate-800">5. Just Culture (วัฒนธรรมที่เป็นธรรม)</h3>
-                    </div>
-                    <p class="text-slate-600 leading-relaxed mb-4">
-                        การแยกแยะพฤติกรรมเพื่อการบริหารจัดการที่เหมาะสม (ปลอบโยน, สอนงาน, หรือลงโทษ)
-                    </p>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left border border-slate-200 rounded-lg overflow-hidden">
-                            <thead class="bg-slate-100 font-bold">
-                                <tr><th class="p-2 border-b">พฤติกรรม</th><th class="p-2 border-b">การจัดการ</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b bg-green-50"><td class="p-2 font-bold text-green-700">Human Error (พลั้งเผลอ)</td><td class="p-2">Console (ปลอบโยน/ปรับระบบ)</td></tr>
-                                <tr class="border-b bg-yellow-50"><td class="p-2 font-bold text-yellow-700">At-Risk (เสี่ยงโดยไม่ตั้งใจ)</td><td class="p-2">Coach (สอนงาน/เตือน)</td></tr>
-                                <tr class="bg-red-50"><td class="p-2 font-bold text-red-700">Reckless (จงใจฝ่าฝืน)</td><td class="p-2">Punish (ลงโทษตามเกณฑ์)</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-blue-500 hover:shadow-xl transition group">
-                <div class="flex items-center gap-3 mb-4">
-                    <span class="text-4xl">📐</span> 
-                    <h3 class="font-bold text-2xl text-slate-800">6. วิศวกรรมปัจจัยมนุษย์ (HFE)</h3>
-                </div>
-                <p class="text-slate-600 leading-relaxed mb-4">
-                    แทนที่จะพยายามเปลี่ยนแปลงตัวบุคคล (ซึ่งมีความผิดพลาดได้เสมอ) <strong>HFE</strong> มุ่งเน้นไปที่ <strong>การออกแบบระบบ</strong> อุปกรณ์ และสภาพแวดล้อมในการทำงาน ให้สอดคล้องกับขีดความสามารถและข้อจำกัดของมนุษย์
-                </p>
-                
-                <div class="bg-blue-50 p-5 rounded-xl border border-blue-100 text-sm">
-                    <strong class="text-blue-800 block mb-3 text-base">กลยุทธ์เชิงวิศวกรรมที่สำคัญ:</strong>
-                    <ul class="space-y-3">
-                        <li class="flex items-start gap-3">
-                            <div class="bg-white p-1 rounded border border-blue-200 shadow-sm text-lg">🔒</div>
-                            <div>
-                                <strong class="text-slate-700">กลไกป้องกันความผิดพลาด (Forcing Functions)</strong>
-                                <p class="text-slate-500 text-xs mt-0.5">การออกแบบเพื่อป้องกันไม่ให้เกิดความผิดพลาดโดยสิ้นเชิง (เช่น การออกแบบหัวต่ออุปกรณ์ที่ไม่สามารถเสียบผิดช่องได้)</p>
-                            </div>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <div class="bg-white p-1 rounded border border-blue-200 shadow-sm text-lg">📏</div>
-                            <div>
-                                <strong class="text-slate-700">การสร้างมาตรฐาน (Standardization)</strong>
-                                <p class="text-slate-500 text-xs mt-0.5">การทำให้อุปกรณ์และเลย์เอาต์มีความสม่ำเสมอ (เช่น รถฉุกเฉินทุกคันต้องจัดวางของเหมือนกันทุกประการ) เพื่อลดภาระทางสมอง</p>
-                            </div>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <div class="bg-white p-1 rounded border border-blue-200 shadow-sm text-lg">🔊</div>
-                            <div>
-                                <strong class="text-slate-700">ความง่ายต่อการใช้งานและระบบเตือน (Usability & Alerts)</strong>
-                                <p class="text-slate-500 text-xs mt-0.5">การออกแบบหน้าจอที่เข้าใจง่ายและระบบเตือนที่แยกแยะได้ชัดเจน เพื่อป้องกันความสับสนในสภาวะวิกฤต</p>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-indigo-600 hover:shadow-xl transition group">
-                <div class="flex items-center gap-3 mb-4">
-                    <span class="text-4xl">🧩</span> 
-                    <h3 class="font-bold text-2xl text-slate-800">7. ปัจจัยส่งเสริม (Contributing Factors)</h3>
-                </div>
-                <p class="text-slate-600 leading-relaxed mb-6">
-                    การระบุเงื่อนไขพื้นฐานที่มีอิทธิพลต่อเหตุการณ์ สิ่งเหล่านี้ไม่ใช่ "สาเหตุ" โดยตรง แต่เป็นปัจจัยที่เพิ่มโอกาสในการเกิดข้อผิดพลาด
-                </p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                        <strong class="text-indigo-800 flex items-center gap-2">
-                            <i class="fas fa-user-injured"></i> ปัจจัยด้านผู้ป่วย
-                        </strong>
-                        <p class="text-xs text-slate-600 mt-2">อาการทางคลินิก, ความซับซ้อนของโรค, อุปสรรคด้านการสื่อสาร หรือปัจจัยทางสังคม</p>
-                    </div>
-            
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                        <strong class="text-indigo-800 flex items-center gap-2">
-                            <i class="fas fa-tasks"></i> ปัจจัยด้านงานและเทคโนโลยี
-                        </strong>
-                        <p class="text-xs text-slate-600 mt-2">การออกแบบแนวทางปฏิบัติ (Protocol), การเข้าถึงผลตรวจ หรือความยากง่ายในการใช้เครื่องมือ</p>
-                    </div>
-            
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                        <strong class="text-indigo-800 flex items-center gap-2">
-                            <i class="fas fa-user-nurse"></i> ปัจจัยด้านบุคคล
-                        </strong>
-                        <p class="text-xs text-slate-600 mt-2">ความรู้, ทักษะ, ความเหนื่อยล้า, ความเครียด หรือสุขภาพกายของเจ้าหน้าที่</p>
-                    </div>
-            
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                        <strong class="text-indigo-800 flex items-center gap-2">
-                            <i class="fas fa-users"></i> ปัจจัยด้านทีม
-                        </strong>
-                        <p class="text-xs text-slate-600 mt-2">การสื่อสารด้วยวาจา, การบันทึกข้อมูล, การนิเทศงาน หรือวัฒนธรรมการขอความช่วยเหลือ</p>
-                    </div>
-            
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                        <strong class="text-indigo-800 flex items-center gap-2">
-                            <i class="fas fa-hospital"></i> ปัจจัยด้านสิ่งแวดล้อมในการทำงาน
-                        </strong>
-                        <p class="text-xs text-slate-600 mt-2">อัตรากำลัง, ภาระงาน, แสงสว่าง, เสียงรบกวน หรือการสนับสนุนด้านธุรการ</p>
-                    </div>
-            
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                        <strong class="text-indigo-800 flex items-center gap-2">
-                            <i class="fas fa-sitemap"></i> ปัจจัยด้านองค์กรและการจัดการ
-                        </strong>
-                        <p class="text-xs text-slate-600 mt-2">วัฒนธรรมความปลอดภัย, การลำดับความสำคัญ, นโยบาย หรือข้อจำกัดด้านงบประมาณ</p>
-                    </div>
-            
-                </div>
-            </div>
-            
-            <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-rose-500 hover:shadow-xl transition group">
-                <div class="flex items-center gap-3 mb-4">
-                    <span class="text-4xl">🔮</span> 
-                    <h3 class="font-bold text-2xl text-slate-800">8. FMEA (การป้องกันล่วงหน้า)</h3>
-                </div>
-                <p class="text-slate-600 leading-relaxed mb-4">
-                    <strong>การวิเคราะห์ลักษณะอาการบกพร่องและผลกระทบ:</strong> ในขณะที่ RCA มองย้อนกลับไปเพื่อแก้ปัญหาในอดีต FMEA คือการมองไป <strong>ข้างหน้า</strong> เพื่อคาดการณ์และป้องกันความล้มเหลว <em>ก่อน</em> ที่จะเกิดขึ้นจริง
-                </p>
-            
-                <div class="bg-rose-50 border-l-4 border-rose-500 p-4 mb-6 rounded-r-lg">
-                    <strong class="text-rose-700 text-sm uppercase tracking-wide">🚀 ควรใช้เมื่อใด:</strong>
-                    <p class="text-rose-800 text-sm mt-1">
-                        ใช้ FMEA <strong>หลังจาก</strong> ออกแบบแผนปฏิบัติการใหม่ (จากขั้นตอนที่ 2) เพื่อ "ทดสอบระบบ" ก่อนนำโซลูชันไปประกาศใช้จริงทั่วทั้งโรงพยาบาล
-                    </p>
-                </div>
-            
-                <div class="bg-white border border-rose-100 rounded-xl p-4 shadow-sm">
-                    <div class="text-center mb-3">
-                        <span class="text-xs font-bold text-slate-400 uppercase">สูตรคำนวณความเสี่ยง (RPN)</span>
-                    </div>
-                    <div class="flex flex-wrap justify-center items-center gap-2 md:gap-4 text-center">
-                        
-                        <div class="bg-rose-100 p-3 rounded-lg w-24">
-                            <div class="text-2xl font-bold text-rose-600">S</div>
-                            <div class="text-[10px] text-rose-800 font-bold mt-1">ความรุนแรง</div>
-                            <div class="text-[9px] text-rose-600">(Severity)</div>
-                        </div>
-            
-                        <div class="text-slate-300 text-xl">✖</div>
-            
-                        <div class="bg-rose-100 p-3 rounded-lg w-24">
-                            <div class="text-2xl font-bold text-rose-600">O</div>
-                            <div class="text-[10px] text-rose-800 font-bold mt-1">โอกาสเกิด</div>
-                            <div class="text-[9px] text-rose-600">(Occurrence)</div>
-                        </div>
-            
-                        <div class="text-slate-300 text-xl">✖</div>
-            
-                        <div class="bg-rose-100 p-3 rounded-lg w-24">
-                            <div class="text-2xl font-bold text-rose-600">D</div>
-                            <div class="text-[10px] text-rose-800 font-bold mt-1">การตรวจจับ</div>
-                            <div class="text-[9px] text-rose-600">(Detection)</div>
-                        </div>
-            
-                        <div class="text-slate-400 text-xl">=</div>
-            
-                        <div class="bg-slate-800 p-3 rounded-lg w-28 shadow-md">
-                            <div class="text-2xl font-bold text-white">RPN</div>
-                            <div class="text-[10px] text-slate-300 mt-1">คะแนนลำดับความสำคัญ</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            
-        </section>
-
-        <section class="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-200">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                
-                <div class="lg:col-span-5 space-y-6">
-                    <h2 class="text-3xl font-bold text-slate-800">2. การประเมินสถานะปัจจุบัน</h2>
-                    <div class="h-1 w-20 bg-teal-500 rounded-full"></div>
-                    <p class="text-slate-600 leading-relaxed font-light italic border-l-4 border-teal-500 pl-4 bg-teal-50/50 p-2 rounded-r-lg">
-                        "อ้างอิงจาก AHRQ HSOPSC 2.0 (10 ด้าน)"
-                    </p>
-                    
-                    <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 max-h-[400px] overflow-y-auto">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 sticky top-0 bg-slate-100 py-2 border-b">
-                            🎚️ ระบุ % การตอบเชิงบวก
-                        </h4>
-                        <div id="input-controls" class="space-y-4 text-sm">
-                            </div>
-                    </div> <div class="chart-container mt-6">
-                        <canvas id="assessmentChart"></canvas>
-                    </div>
-                </div> <div class="lg:col-span-7 space-y-6">
-                     <h3 class="font-bold text-slate-700 border-l-4 border-teal-500 pl-4 mb-6">การวิเคราะห์ช่องว่างและแนวทางแก้ไข</h3>
-                     <div id="gap-analysis-list" class="space-y-4">
-                         <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
-                             <div class="flex items-start gap-4">
-                                 <div class="bg-red-100 text-red-600 p-3 rounded-lg font-bold text-2xl">⚠️</div>
-                                 <div>
-                                     <h4 class="font-bold text-lg text-slate-800">การตอบสนองต่อข้อผิดพลาดแบบไม่ลงโทษ</h4>
-                                     <p class="text-sm text-slate-600 mt-2"><strong>ปัญหา:</strong> เจ้าหน้าที่กลัวการลงโทษเมื่อรายงานความผิดพลาด ทำให้มีการปกปิดข้อมูล</p>
-                                     <div class="mt-4 bg-white p-4 rounded-lg border border-slate-200 text-sm">
-                                         <strong class="text-teal-600">✅ แนวทางแก้ไข:</strong>
-                                         <ul class="list-disc list-inside text-slate-500 mt-2 space-y-1">
-                                             <li>ประกาศนโยบาย "Blame-free Culture" อย่างเป็นทางการ</li>
-                                             <li>ใช้ Substitution Test ในการพิจารณาอุบัติการณ์</li>
-                                         </ul>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
-                         </div>
-                </div> </div> </section>
-
-        <section class="py-8">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-slate-800">3. แผนการดำเนินงาน (Implementation Roadmap)</h2>
-                <div class="h-1 w-20 bg-blue-500 mx-auto mt-4 rounded-full"></div>
-                <p class="text-slate-600 mt-4">แผนยุทธศาสตร์ 3 ระยะ เพื่อการปรับเปลี่ยนวัฒนธรรมองค์กรอย่างเป็นระบบ</p>
-            </div>
-        
-            <div class="relative max-w-5xl mx-auto pl-8 md:pl-0">
-                <div class="timeline-line hidden md:block" style="left: 50%; transform: translateX(-50%);"></div>
-                
-                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-                    <div class="md:text-right md:pr-12 order-1">
-                        <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-teal-500 relative">
-                            <h3 class="text-xl font-bold text-teal-700">ระยะที่ 1: สร้างความไว้วางใจ (Build Trust)</h3>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">ระยะเวลา: เดือนที่ 1-3</span>
-                            <p class="text-sm text-slate-600 mt-3 leading-relaxed">
-                                มุ่งเน้นการปรับทัศนคติของผู้บริหารและบุคลากร เพื่อส่งเสริมให้เกิดการสื่อสารเรื่องความปลอดภัยอย่างเปิดกว้าง
-                            </p>
-                            <div class="mt-4 pt-4 border-t border-slate-100 text-left">
-                                <strong class="text-sm text-slate-700 block mb-2">🚀 กิจกรรมหลัก:</strong>
-                                <ul class="text-sm text-slate-600 space-y-2">
-                                    <li>🔹 <strong>Executive Safety Walkrounds:</strong> ผู้บริหารลงหน้างานเพื่อ "รับฟัง ไม่ใช่สั่งการ"</li>
-                                    <li>🔹 <strong>Stop the Blame Campaign:</strong> ปรับจุดเน้นจากการหา "คนผิด" เป็นการหา "รูรั่วของระบบ"</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="absolute left-0 md:left-1/2 -translate-x-1/2 top-6 w-10 h-10 bg-teal-500 rounded-full border-4 border-white shadow-md z-10 flex items-center justify-center text-white font-bold">1</div>
-                    <div class="hidden md:block order-2"></div>
-                </div>
-        
-                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-                    <div class="hidden md:block order-1"></div>
-                    <div class="absolute left-0 md:left-1/2 -translate-x-1/2 top-6 w-10 h-10 bg-blue-500 rounded-full border-4 border-white shadow-md z-10 flex items-center justify-center text-white font-bold">2</div>
-                    <div class="md:pl-12 order-2">
-                        <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-blue-500 relative">
-                            <h3 class="text-xl font-bold text-blue-700">ระยะที่ 2: ระบบการรายงาน (Reporting System)</h3>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">ระยะเวลา: เดือนที่ 4-6</span>
-                            <p class="text-sm text-slate-600 mt-3 leading-relaxed">
-                                พัฒนาระบบการรายงานให้ "ง่าย" และ "มีความหมาย" ต่อผู้รายงาน (ป้องกันปัญหาการรายงานแล้วเงียบหาย)
-                            </p>
-                            <div class="mt-4 pt-4 border-t border-slate-100 text-left">
-                                <strong class="text-sm text-slate-700 block mb-2">🚀 กิจกรรมหลัก:</strong>
-                                <ul class="text-sm text-slate-600 space-y-2">
-                                    <li>🔹 <strong>Simplify IR Form:</strong> ปรับลดเวลาการเขียนใบรายงานอุบัติการณ์ (IR) ให้เหลือต่ำกว่า 2 นาที</li>
-                                    <li>🔹 <strong>Good Catch Award:</strong> ให้รางวัลและชื่นชมบุคลากรที่รายงานเหตุการณ์เกือบพลาด (Near-miss)</li>
-                                    <li>🔹 <strong>Feedback Loop:</strong> แจ้งผลการแก้ไขกลับไปยังผู้รายงานภายใน 7 วัน</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-        
-                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="md:text-right md:pr-12 order-1">
-                        <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-amber-500 relative">
-                            <h3 class="text-xl font-bold text-amber-600">ระยะที่ 3: เรียนรู้และยั่งยืน (Sustain & Learn)</h3>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">ระยะเวลา: เดือนที่ 7 เป็นต้นไป</span>
-                            <p class="text-sm text-slate-600 mt-3 leading-relaxed">
-                                เปลี่ยนจากการแก้ปัญหาเชิงรับ (Reactive) เป็นการเรียนรู้เชิงรุกเพื่อป้องกันก่อนเกิดเหตุ (Proactive Learning)
-                            </p>
-                            <div class="mt-4 pt-4 border-t border-slate-100 text-left">
-                                <strong class="text-sm text-slate-700 block mb-2">🚀 กิจกรรมหลัก:</strong>
-                                <ul class="text-sm text-slate-600 space-y-2">
-                                    <li>🔹 <strong>Safety Huddles:</strong> ประชุมสั้นๆ 5-10 นาทีก่อนเริ่มงานทุกเช้าเพื่อประเมินความเสี่ยง</li>
-                                    <li>🔹 <strong>RCA (Root Cause Analysis):</strong> วิเคราะห์รากเหง้าปัญหาเชิงระบบโดยไม่โทษบุคคล</li>
-                                    <li>🔹 <strong>Sharing Success:</strong> แบ่งปันเรื่องราวความสำเร็จ (Safety-II) ข้ามแผนก</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="absolute left-0 md:left-1/2 -translate-x-1/2 top-6 w-10 h-10 bg-amber-500 rounded-full border-4 border-white shadow-md z-10 flex items-center justify-center text-white font-bold">3</div>
-                    <div class="hidden md:block order-2"></div>
-                </div>
-            </div>
-        </section>
-
-        
-    </main>
-
-    <div class="container mx-auto px-4 pb-6">
-      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <p class="text-indigo-700 font-bold italic mb-1">ข้อความปฏิเสธความรับผิดชอบ (Disclaimer):</p>
-        <p class="text-slate-600 text-sm leading-relaxed">
-          แผนภาพและเนื้อหาในเอกสารนี้ถูกจัดทำขึ้นโดยได้รับความช่วยเหลือจาก AI (AI-Assisted) เพื่อเป็นแนวทางเบื้องต้นในการวิเคราะห์และพัฒนาคุณภาพบริการสาธารณสุข ผู้ใช้งานควรตรวจสอบและยืนยันความถูกต้อง ปรับใช้ให้เข้ากับบริบทขององค์กร และอ้างอิงมาตรฐานวิชาชีพที่เกี่ยวข้องก่อนนำไปใช้ปฏิบัติจริง
+    <section>
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-slate-800">1. รายละเอียดแนวคิดหลัก</h2>
+        <div class="h-1 w-20 bg-teal-500 mx-auto mt-4 rounded-full"></div>
+        <p class="text-slate-600 mt-4 max-w-3xl mx-auto">
+          ทำความเข้าใจ “6 เสาหลักของความปลอดภัย” เพื่อมองเห็นว่า “เหตุการณ์เกิดขึ้นได้อย่างไร” และ “จะป้องกันอย่างไร” โดยไม่มุ่งตำหนิบุคคล
         </p>
       </div>
-    </div>
 
-    <footer class="bg-slate-900 py-12 border-t border-slate-800 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p class="text-slate-100 text-sm mb-2">โครงการนี้เป็นส่วนหนึ่งของความร่วมมือภายใต้กรอบ ASQua เพื่อยกระดับมาตรฐานคุณภาพสาธารณสุขในภูมิภาคเอเชีย</p>
-            <p class="text-slate-200 text-sm">พัฒนาโดย พ.ต.อ.นพ.กฤติชาติ กำจรปรีชา และ ภญ.วิลาศินี เขื่อนแก้ว</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-cyan-500 hover:shadow-xl transition group">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">🐟</span>
+            <h3 class="font-bold text-2xl text-slate-800">1. แผนผังก้างปลา (Ishikawa / Fishbone)</h3>
+          </div>
+          <p class="text-slate-600 leading-relaxed mb-6">
+            เป็นเครื่องมือที่ <strong>ศาสตราจารย์คาโอรุ อิชิกาวะ (Kaoru Ishikawa)</strong> พัฒนาขึ้นเพื่อการทำ RCA โดยในบริบทงานสุขภาพมักโฟกัสที่ <strong>6M</strong> ดังนี้:
+          </p>
+
+          <div class="w-full overflow-hidden bg-slate-50 rounded-xl border border-slate-200 p-2 mb-4 flex justify-center">
+            <svg viewBox="0 0 800 350" class="w-full h-auto drop-shadow-sm">
+              <line x1="50" y1="175" x2="650" y2="175" stroke="#334155" stroke-width="4" />
+              <polygon points="650,130 790,175 650,220" fill="#0EA5E9" />
+              <text x="705" y="172" font-family="sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">ปัญหา</text>
+              <text x="705" y="195" font-family="sans-serif" font-size="12" fill="#E0F2FE" text-anchor="middle">(ผลลัพธ์)</text>
+
+              <line x1="150" y1="50" x2="200" y2="175" stroke="#64748B" stroke-width="2" />
+              <rect x="100" y="20" width="100" height="30" rx="5" fill="white" stroke="#64748B" />
+              <text x="150" y="40" font-family="sans-serif" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">คน (Man)</text>
+
+              <line x1="350" y1="50" x2="400" y2="175" stroke="#64748B" stroke-width="2" />
+              <rect x="300" y="20" width="100" height="30" rx="5" fill="white" stroke="#64748B" />
+              <text x="350" y="40" font-family="sans-serif" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">เครื่องมือ (Machine)</text>
+
+              <line x1="550" y1="50" x2="600" y2="175" stroke="#64748B" stroke-width="2" />
+              <rect x="500" y="20" width="100" height="30" rx="5" fill="white" stroke="#64748B" />
+              <text x="550" y="40" font-family="sans-serif" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">วิธีการ (Method)</text>
+
+              <line x1="150" y1="300" x2="200" y2="175" stroke="#64748B" stroke-width="2" />
+              <rect x="100" y="300" width="100" height="30" rx="5" fill="white" stroke="#64748B" />
+              <text x="150" y="320" font-family="sans-serif" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">วัสดุ (Material)</text>
+
+              <line x1="450" y1="300" x2="500" y2="175" stroke="#64748B" stroke-width="2" />
+              <rect x="400" y="300" width="120" height="30" rx="5" fill="white" stroke="#64748B" />
+              <text x="460" y="320" font-family="sans-serif" font-size="14" font-weight="bold" fill="#334155" text-anchor="middle">สภาพแวดล้อม (Environment)</text>
+            </svg>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 bg-cyan-50 p-4 rounded-xl border border-cyan-100">
+            <div>
+              <strong class="text-cyan-800">1. คน (Man):</strong>
+              <p>สมรรถนะบุคลากร ความล้า ความเครียด ระดับการจัดเวร/อัตรากำลัง การฝึกอบรม</p>
+            </div>
+            <div>
+              <strong class="text-cyan-800">2. เครื่องมือ (Machine):</strong>
+              <p>การชำรุด ปัญหาการสอบเทียบ การบำรุงรักษาไม่พอ ออกแบบใช้งานยาก</p>
+            </div>
+            <div>
+              <strong class="text-cyan-800">3. วิธีการ (Method):</strong>
+              <p>SOP ไม่ชัด แนวทางล้าสมัย โปรโตคอลสื่อสารไม่เพียงพอ</p>
+            </div>
+            <div>
+              <strong class="text-cyan-800">4. วัสดุ (Material):</strong>
+              <p>ยา/เวชภัณฑ์มีตำหนิ บรรจุภัณฑ์คล้ายกัน วัสดุสิ้นเปลืองคุณภาพต่ำ</p>
+            </div>
+            <div>
+              <strong class="text-cyan-800">5. สภาพแวดล้อม (Environment):</strong>
+              <p>เสียงดัง แสงสว่าง ผังพื้นที่ สิ่งรบกวน อุณหภูมิ</p>
+            </div>
+            <div>
+              <strong class="text-cyan-800">6. การวัด (Measurement):</strong>
+              <p>ความถูกต้องของข้อมูล การตีความผลตรวจ ความเหมาะสมของตัวชี้วัด</p>
+            </div>
+          </div>
         </div>
-    </footer>
 
-    <script>
-        // --- Core Gemini API Call Function ---
-        async function callGemini(prompt) {
-            try {
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt })
-                });
-                if (!response.ok) throw new Error("การเชื่อมต่อ AI ขัดข้อง");
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text;
-            } catch (error) { 
-                console.error(error);
-                throw error; 
-            }
-        }
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-pink-500 hover:shadow-xl transition group">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">❓</span>
+            <h3 class="font-bold text-2xl text-slate-800">2. วิเคราะห์ทำไม-ทำไม (5 Whys)</h3>
+          </div>
+          <p class="text-slate-600 leading-relaxed mb-4">
+            เป็นแนวทางที่ <strong>ซาคิจิ โตโยดะ (Sakichi Toyoda)</strong> (โตโยต้า) พัฒนาขึ้น เพื่อเจาะลึกปัญหาเฉพาะที่พบจากก้างปลา โดยถาม “ทำไม?” ซ้ำ 5 ครั้ง เพื่อค้นหา “รากสาเหตุที่แท้จริง”
+          </p>
+          <div class="bg-pink-50 p-4 rounded-lg border border-pink-100">
+            <strong class="text-pink-800 block mb-2 text-sm">ตัวอย่าง: ผู้ป่วยหกล้ม</strong>
+            <div class="space-y-0">
+              <div class="why-step">
+                <div class="why-number">1</div><div class="why-line"></div>
+                <div class="text-sm text-slate-700 pt-1">ทำไม? พื้นเปียก</div>
+              </div>
+              <div class="why-step">
+                <div class="why-number">2</div><div class="why-line"></div>
+                <div class="text-sm text-slate-700 pt-1">ทำไม? ท่อน้ำรั่ว</div>
+              </div>
+              <div class="why-step">
+                <div class="why-number">3</div><div class="why-line"></div>
+                <div class="text-sm text-slate-700 pt-1">ทำไม? ซีลเสื่อม/แตก</div>
+              </div>
+              <div class="why-step">
+                <div class="why-number">4</div><div class="why-line"></div>
+                <div class="text-sm text-slate-700 pt-1">ทำไม? จัดซื้อซีลราคาถูก</div>
+              </div>
+              <div class="why-step">
+                <div class="why-number">5</div>
+                <div class="text-sm text-slate-700 pt-1 font-bold text-pink-700">รากสาเหตุ: นโยบายจัดซื้อให้ความสำคัญกับราคาต่ำสุดมากกว่าคุณภาพ</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        // --- 1. Combined Workflow Starter ---
-        async function startFullAnalysis() {
-            const input = document.getElementById('scenarioInput').value;
-            const runButton = document.getElementById('combinedRunButton');
-            const spinner = document.getElementById('runSpinner');
-            const resultDiv = document.getElementById('analyzeResult');
-            const planInput = document.getElementById('planInput');
-            const planResultDiv = document.getElementById('planResult');
-            
-            if (!input.trim()) { alert("กรุณาระบุรายละเอียดเหตุการณ์"); return; }
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-green-600 hover:shadow-xl transition group">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">🎄</span>
+            <h3 class="font-bold text-2xl text-slate-800">3. แผนผังต้นไม้ความขัดข้อง (FTA)</h3>
+          </div>
+          <p class="text-xs text-slate-500 mb-3">ทำแผนที่เส้นทางของความล้มเหลวเชิงเหตุและผล</p>
+          <div class="bg-green-50 p-6 rounded-xl border border-green-200 flex flex-col items-center overflow-x-auto">
+            <div class="bg-red-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md z-10 text-center">...ระบุเหตุการณ์ระดับบน (อุบัติการณ์)...</div>
+            <div class="h-6 w-0.5 bg-slate-400"></div>
+            <div class="bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded z-10 relative">OR Gate</div>
+            <div class="h-4 w-0.5 bg-slate-400"></div>
+            <div class="w-64 h-0.5 bg-slate-400"></div>
+            <div class="flex justify-between w-full max-w-md gap-4">
+              <div class="flex flex-col items-center w-1/2">
+                <div class="h-4 w-0.5 bg-slate-400"></div>
+                <div class="bg-white border-2 border-green-500 text-green-800 px-3 py-2 rounded-lg text-xs font-bold shadow-sm text-center">...สาเหตุโดยตรง A...</div>
+              </div>
+              <div class="flex flex-col items-center w-1/2">
+                <div class="h-4 w-0.5 bg-slate-400"></div>
+                <div class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded z-10 relative">AND Gate</div>
+                <div class="h-4 w-0.5 bg-slate-400"></div>
+                <div class="w-24 h-0.5 bg-slate-400"></div>
+                <div class="flex justify-between w-full gap-2">
+                  <div class="flex flex-col items-center">
+                    <div class="h-3 w-0.5 bg-slate-400"></div>
+                    <div class="bg-white border border-green-500 text-green-700 px-2 py-1 rounded text-[10px] text-center">...รากสาเหตุ 1...</div>
+                  </div>
+                  <div class="flex flex-col items-center">
+                    <div class="h-3 w-0.5 bg-slate-400"></div>
+                    <div class="bg-white border border-green-500 text-green-700 px-2 py-1 rounded text-[10px] text-center">...รากสาเหตุ 2...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            runButton.disabled = true;
-            spinner.classList.remove('hidden');
-            resultDiv.classList.add('hidden');
-            planResultDiv.classList.add('hidden');
-            planInput.value = 'กำลังวิเคราะห์และสร้างแผนปฏิบัติการ... กรุณารอสักครู่ (ประมาณ 30-60 วินาที)';
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-amber-500 hover:shadow-xl transition group">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">🧀</span>
+            <h3 class="font-bold text-2xl text-slate-800">4. โมเดลสวิสชีส (Swiss Cheese Model)</h3>
+          </div>
+          <p class="text-slate-600 leading-relaxed mb-6">
+            <strong>โมเดลของ James Reason:</strong> อุบัติการณ์เกิดขึ้นเมื่อ “รู” (ช่องโหว่) ในหลายชั้นการป้องกันเรียงตัวตรงกัน ทำให้ “อันตราย” ทะลุผ่านไปจนเกิดความเสียหาย
+          </p>
 
-            try {
-                // STEP 1: Analyze Risk (Thai Prompt)
-                const analysisData = await analyzeRiskStep(input);
-                resultDiv.innerHTML = analysisData.html;
-                resultDiv.classList.remove('hidden');
-                
-                const autoFilledContent = `[เหตุการณ์]\n${input}\n\n[ผลการวิเคราะห์ RCA]\n${analysisData.cleanText}`;
-                
-                // STEP 2: Generate Action Plan
-                planInput.value = 'วิเคราะห์ RCA เสร็จสิ้น... กำลังสร้างแผนปฏิบัติการเชิงลึก...';
-                const actionPlanHTML = await generateActionPlanStep(autoFilledContent);
+          <div class="w-full overflow-hidden bg-slate-50 rounded-xl border border-slate-200 p-6 mb-6 flex justify-center">
+            <svg viewBox="0 0 800 320" class="w-full h-auto drop-shadow-sm">
+              <defs>
+                <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#EF4444" />
+                </marker>
+              </defs>
+              <line x1="50" y1="140" x2="720" y2="140" stroke="#EF4444" stroke-width="4" stroke-dasharray="10,5" marker-end="url(#arrowRed)" />
+              <text x="50" y="120" font-family="sans-serif" font-size="14" font-weight="bold" fill="#EF4444">อันตราย (Hazard)</text>
 
-                planResultDiv.innerHTML = actionPlanHTML;
-                planResultDiv.classList.remove('hidden');
-                planInput.value = '✔ สร้างแผนปฏิบัติการสำเร็จ';
-                planResultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              <g transform="translate(150, 40)">
+                <rect x="0" y="0" width="70" height="200" rx="4" fill="#FEF3C7" stroke="#334155" stroke-width="2" />
+                <circle cx="35" cy="40" r="10" fill="white" stroke="#334155" stroke-width="1" />
+                <circle cx="20" cy="180" r="8" fill="white" stroke="#334155" stroke-width="1" />
+                <circle cx="35" cy="100" r="15" fill="white" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,2" />
+                <text x="35" y="230" font-family="sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">นโยบายองค์กร</text>
+              </g>
 
-            } catch (error) {
-                alert("เกิดข้อผิดพลาด: " + error.message);
-                planInput.value = `เกิดข้อผิดพลาด: ${error.message}`;
-            } finally {
-                spinner.classList.add('hidden');
-                runButton.disabled = false;
-            }
-        }
+              <g transform="translate(300, 40)">
+                <rect x="0" y="0" width="70" height="200" rx="4" fill="#FDE68A" stroke="#334155" stroke-width="2" />
+                <circle cx="20" cy="50" r="9" fill="white" stroke="#334155" stroke-width="1" />
+                <circle cx="50" cy="160" r="11" fill="white" stroke="#334155" stroke-width="1" />
+                <circle cx="35" cy="100" r="15" fill="white" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,2" />
+                <text x="35" y="230" font-family="sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">การบริหาร/กำกับ</text>
+              </g>
 
-        async function analyzeRiskStep(input) {
-            const prompt = `คุณคือผู้เชี่ยวชาญด้านความปลอดภัยผู้ป่วย (Patient Safety Expert) 
-            จงวิเคราะห์สถานการณ์ต่อไปนี้เป็นภาษาไทย: "${input}"
-            
-            รูปแบบผลลัพธ์: ภาษาไทย HTML (ไม่ใช้ Markdown code blocks)
-            หัวข้อที่ต้องมี:
-            1. สรุปเหตุการณ์ (Event Summary)
-            2. ลำดับเหตุการณ์ (Timeline)
-            3. ผังก้างปลา 6Ms (Fishbone Diagram) - ใช้ class "fishbone-grid" และ "fishbone-card"
-            4. การวิเคราะห์ 5 Whys - ใช้ class "why-step"
-            5. ผังต้นไม้การแก้ปัญหา (Christmas Tree Diagram)
-            6. Swiss Cheese Analysis (ตารางวิเคราะห์จุดอ่อนของระบบ)`;
+              <g transform="translate(450, 40)">
+                <rect x="0" y="0" width="70" height="200" rx="4" fill="#FCD34D" stroke="#334155" stroke-width="2" />
+                <circle cx="45" cy="30" r="8" fill="white" stroke="#334155" stroke-width="1" />
+                <circle cx="25" cy="170" r="10" fill="white" stroke="#334155" stroke-width="1" />
+                <circle cx="35" cy="100" r="15" fill="white" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,2" />
+                <text x="35" y="230" font-family="sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">เงื่อนไขแวดล้อม</text>
+              </g>
 
-            const responseText = await callGemini(prompt);
-            let formattedText = responseText.replace(/```html/g, '').replace(/```/g, '');
-            const cleanText = responseText.replace(/<[^>]*>?/gm, ''); 
-            return { html: formattedText, cleanText: cleanText };
-        }
+              <g transform="translate(600, 40)">
+                <rect x="0" y="0" width="70" height="200" rx="4" fill="#F59E0B" stroke="#334155" stroke-width="2" />
+                <circle cx="20" cy="60" r="12" fill="white" stroke="#334155" stroke-width="1" />
+                <circle cx="50" cy="150" r="9" fill="white" stroke="#334155" stroke-width="1" />
+                <circle cx="35" cy="100" r="15" fill="white" stroke="#EF4444" stroke-width="2" stroke-dasharray="4,2" />
+                <text x="35" y="230" font-family="sans-serif" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">พฤติกรรมหน้างาน</text>
+              </g>
 
-        async function generateActionPlanStep(analysisData) {
-            const prompt = `จงสวมบทบาทหัวหน้าบริหารความเสี่ยงโรงพยาบาล 
-            จากข้อมูล RCA นี้: "${analysisData}"
-            
-            จงสร้างแผนปฏิบัติการภาษาไทยในรูปแบบ HTML ประกอบด้วย:
-            1. ตารางสรุปกลยุทธ์ PDSA (Plan, Do, Study, Act)
-            2. ตารางแผนปฏิบัติการโดยละเอียด (Objective, Steps, KPIs, Target, Owner, Timeline)
-            3. ตารางนวัตกรรมและโครงการริเริ่ม (Innovative Safety Initiatives)
-            4. บทสรุปและข้อเสนอแนะเพื่อวัฒนธรรมความปลอดภัย`;
+              <g transform="translate(740, 140)">
+                <path d="M0 -20 L5 -5 L20 0 L5 5 L0 20 L-5 5 L-20 0 L-5 -5 Z" fill="#EF4444" stroke="#991B1B" stroke-width="2" />
+                <text x="0" y="40" font-family="sans-serif" font-size="14" font-weight="bold" fill="#EF4444" text-anchor="middle">ความเสียหาย</text>
+              </g>
+            </svg>
+          </div>
 
-            const responseText = await callGemini(prompt);
-            return responseText.replace(/```html/g, '').replace(/```/g, '');
-        }
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 bg-amber-50 p-4 rounded-xl border border-amber-100">
+            <div>
+              <strong class="text-amber-800">1. อิทธิพลระดับองค์กร:</strong>
+              <p>การจัดสรรทรัพยากร วัฒนธรรมองค์กร นโยบาย/ทิศทาง</p>
+            </div>
+            <div>
+              <strong class="text-amber-800">2. การกำกับที่ไม่ปลอดภัย:</strong>
+              <p>ฝึกอบรมไม่พอ จัดตารางงานไม่เหมาะสม ปล่อยปัญหาค้าง</p>
+            </div>
+            <div>
+              <strong class="text-amber-800">3. เงื่อนไขแวดล้อมก่อนเกิดเหตุ:</strong>
+              <p>ความล้า ความเครียด ภาระงานเกิน ออกแบบอุปกรณ์ไม่เอื้อต่อการใช้งาน</p>
+            </div>
+            <div>
+              <strong class="text-amber-800">4. การกระทำที่ไม่ปลอดภัย:</strong>
+              <p>เผลอ ลืม ทำผิด หรือฝ่าฝืนขั้นตอน</p>
+            </div>
+          </div>
+        </div>
 
-        function exportToWord() {
-            const scenario = document.getElementById('scenarioInput').value;
-            const riskAnalysis = document.getElementById('analyzeResult').innerHTML;
-            const actionPlan = document.getElementById('planResult').innerHTML;
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-teal-500 hover:shadow-xl transition group">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">⚖️</span>
+            <h3 class="font-bold text-2xl text-slate-800">5. วัฒนธรรมยุติธรรม (Just Culture)</h3>
+          </div>
+          <p class="text-slate-600 leading-relaxed mb-4">
+            วัฒนธรรมยุติธรรมแยกแยะพฤติกรรมออกเป็น 3 กลุ่ม (ความผิดพลาดโดยมนุษย์ / พฤติกรรมเสี่ยง / พฤติกรรมมุทะลุ) และตอบสนองอย่างเหมาะสม
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-600 border border-slate-200 rounded-lg">
+              <thead class="bg-slate-100 text-slate-700 font-bold">
+                <tr>
+                  <th class="p-2 border-b">ประเภทพฤติกรรม</th>
+                  <th class="p-2 border-b">การตอบสนอง/การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b bg-green-50">
+                  <td class="p-2 font-bold text-green-700">ความผิดพลาดโดยมนุษย์ (Human Error)</td>
+                  <td class="p-2">ปลอบประคอง/สนับสนุน (Console)</td>
+                </tr>
+                <tr class="border-b bg-yellow-50">
+                  <td class="p-2 font-bold text-yellow-700">พฤติกรรมเสี่ยง (At-Risk Behavior)</td>
+                  <td class="p-2">ให้ความรู้/โค้ช (Coach)</td>
+                </tr>
+                <tr class="bg-red-50">
+                  <td class="p-2 font-bold text-red-700">พฤติกรรมมุทะลุ (Reckless Behavior)</td>
+                  <td class="p-2">วินัย/ลงโทษ (Punish)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-            if (!actionPlan) { alert("กรุณารอให้ระบบสร้างแผนงานให้เสร็จก่อนครับ"); return; }
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-blue-500 hover:shadow-xl transition group">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">📐</span>
+            <h3 class="font-bold text-2xl text-slate-800">6. การยศาสตร์ปัจจัยมนุษย์ (HFE)</h3>
+          </div>
+          <p class="text-slate-600 leading-relaxed mb-4">
+            แทนที่จะพยายาม “เปลี่ยนคน” (ซึ่งย่อมผิดพลาดได้) <strong>HFE</strong> เน้นการ <strong>ออกแบบระบบ อุปกรณ์ และสภาพแวดล้อมการทำงาน</strong> ให้สอดคล้องกับศักยภาพและข้อจำกัดของมนุษย์
+          </p>
 
-            const content = `
-                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head><meta charset='utf-8'><title>รายงานแผนปฏิบัติการความปลอดภัย</title></head>
-                <body style="font-family: 'Sarabun', sans-serif;">
-                    <h1 style="text-align:center;">รายงานการวิเคราะห์ RCA และแผนปฏิบัติการ</h1>
-                    <hr>
-                    <h3>สถานการณ์ที่เกิดขึ้น:</h3><p>${scenario}</p>
-                    <h2>1. ผลการวิเคราะห์รากเหง้าปัญหา (RCA)</h2>${riskAnalysis}
-                    <h2>2. แผนปฏิบัติการและโครงการริเริ่ม</h2>${actionPlan}
-                </body></html>`;
-            
-            const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `RCA_Report_${new Date().toISOString().slice(0,10)}.doc`;
-            link.click();
-        }
-
-        // --- Chart & Controls Configuration ---
-        const thLabels = [
-            '1. การทำงานเป็นทีม', '2. อัตรากำลังและจังหวะงาน', '3. การเรียนรู้ขององค์กร', 
-            '4. การตอบสนองต่อความผิดพลาด', '5. การสนับสนุนจากหัวหน้างาน', '6. การสื่อสารเกี่ยวกับข้อผิดพลาด', 
-            '7. ความเปิดกว้างในการสื่อสาร', '8. การรายงานอุบัติการณ์', '9. การสนับสนุนจากผู้บริหาร', 
-            '10. การส่งมอบเวรและแลกเปลี่ยนข้อมูล'
-        ];
-
-        const controls = document.getElementById('input-controls');
-        thLabels.forEach((label, i) => {
-            controls.innerHTML += `
+          <div class="bg-blue-50 p-5 rounded-xl border border-blue-100 text-sm">
+            <strong class="text-blue-800 block mb-3 text-base">กลยุทธ์เชิงวิศวกรรมที่สำคัญ:</strong>
+            <ul class="space-y-3">
+              <li class="flex items-start gap-3">
+                <div class="bg-white p-1 rounded border border-blue-200 shadow-sm text-lg">🔒</div>
                 <div>
-                    <div class="flex justify-between mb-1">
-                        <label class="text-slate-700 font-semibold text-xs">${label}</label>
-                        <span id="val-${i}" class="text-teal-600 font-bold text-xs">0.00%</span>
-                    </div>
-                    <input type="range" min="0" max="100" step="0.01" value="0" class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500" oninput="updateChartData(${i}, this.value)">
-                </div>`;
-        });
+                  <strong class="text-slate-700">กันความผิดพลาดเชิงบังคับ (Forcing Functions)</strong>
+                  <p class="text-slate-500 text-xs mt-0.5">ออกแบบให้ “ทำผิดไม่ได้” (เช่น ข้อต่อคนละพอร์ตเสียบกันไม่ได้ทางกายภาพ)</p>
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <div class="bg-white p-1 rounded border border-blue-200 shadow-sm text-lg">📏</div>
+                <div>
+                  <strong class="text-slate-700">ทำให้เป็นมาตรฐาน (Standardization)</strong>
+                  <p class="text-slate-500 text-xs mt-0.5">ทำให้อุปกรณ์/ผังการจัดวางเหมือนกัน (เช่น รถฉุกเฉินจัดวางเหมือนกันทุกจุด) ลดภาระการคิด</p>
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <div class="bg-white p-1 rounded border border-blue-200 shadow-sm text-lg">🔊</div>
+                <div>
+                  <strong class="text-slate-700">ความใช้งานง่ายและสัญญาณเตือน</strong>
+                  <p class="text-slate-500 text-xs mt-0.5">ออกแบบการแสดงผลให้เข้าใจทันที และสัญญาณเตือนชัดเจน ลดความสับสนในภาวะกดดัน</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-        Chart.defaults.font.family = "'Sarabun', sans-serif";
-        const ctx = document.getElementById('assessmentChart');
-        const assessmentChart = new Chart(ctx, {
-            type: 'bar',
-            data: { 
-                labels: thLabels, 
-                datasets: [
-                    { label: 'รพ. ของคุณ (% ตอบเชิงบวก)', data: Array(10).fill(0), backgroundColor: '#0D9488', borderRadius: 4 }, 
-                    { label: 'เป้าหมายในอุดมคติ (100%)', data: Array(10).fill(100), backgroundColor: '#E2E8F0', borderRadius: 4 }
-                ] 
-            },
-            options: { 
-                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-indigo-600 hover:shadow-xl transition group">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">🧩</span>
+            <h3 class="font-bold text-2xl text-slate-800">7. ปัจจัยเอื้อ/ปัจจัยร่วม (Contributing Factors)</h3>
+          </div>
+          <p class="text-slate-600 leading-relaxed mb-6">
+            ระบุเงื่อนไขแฝงที่มีอิทธิพลต่อเหตุการณ์ แม้ไม่ใช่ “สาเหตุโดยตรง” แต่ทำให้ความผิดพลาดเกิดได้ง่ายขึ้น
+          </p>
 
-        function updateChartData(index, value) {
-            document.getElementById(`val-${index}`).innerText = parseFloat(value).toFixed(2) + '%';
-            assessmentChart.data.datasets[0].data[index] = value;
-            assessmentChart.update();
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <strong class="text-indigo-800 flex items-center gap-2">
+                <i class="fas fa-user-injured"></i> ปัจจัยด้านผู้ป่วย
+              </strong>
+              <p class="text-xs text-slate-600 mt-2">ภาวะทางคลินิก ความซับซ้อน อุปสรรคการสื่อสาร ปัจจัยทางสังคม</p>
+            </div>
+
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <strong class="text-indigo-800 flex items-center gap-2">
+                <i class="fas fa-tasks"></i> งานและเทคโนโลยี
+              </strong>
+              <p class="text-xs text-slate-600 mt-2">การออกแบบโปรโตคอล ความพร้อมของผลตรวจ ความใช้งานของอุปกรณ์</p>
+            </div>
+
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <strong class="text-indigo-800 flex items-center gap-2">
+                <i class="fas fa-user-nurse"></i> ปัจจัยรายบุคคล
+              </strong>
+              <p class="text-xs text-slate-600 mt-2">ความรู้ ทักษะ ความล้า ความเครียด สุขภาพกาย</p>
+            </div>
+
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <strong class="text-indigo-800 flex items-center gap-2">
+                <i class="fas fa-users"></i> ปัจจัยทีม
+              </strong>
+              <p class="text-xs text-slate-600 mt-2">การสื่อสารทางวาจา การบันทึก การกำกับดูแล วัฒนธรรมการขอความช่วยเหลือ</p>
+            </div>
+
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <strong class="text-indigo-800 flex items-center gap-2">
+                <i class="fas fa-hospital"></i> สภาพแวดล้อมการทำงาน
+              </strong>
+              <p class="text-xs text-slate-600 mt-2">อัตรากำลัง ภาระงาน เสียง แสง การสนับสนุนจากผู้บริหาร</p>
+            </div>
+
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <strong class="text-indigo-800 flex items-center gap-2">
+                <i class="fas fa-sitemap"></i> องค์กรและการจัดการ
+              </strong>
+              <p class="text-xs text-slate-600 mt-2">วัฒนธรรมความปลอดภัย ลำดับความสำคัญ นโยบาย ข้อจำกัดด้านงบประมาณ</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-rose-500 hover:shadow-xl transition group">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">🔮</span>
+            <h3 class="font-bold text-2xl text-slate-800">8. FMEA (ป้องกันล่วงหน้า)</h3>
+          </div>
+          <p class="text-slate-600 leading-relaxed mb-4">
+            <strong>Failure Mode and Effects Analysis:</strong> หาก RCA คือการ “มองย้อนกลับ” เพื่อแก้ปัญหาในอดีต FMEA คือการ “มองไปข้างหน้า” เพื่อคาดการณ์ความล้มเหลวและป้องกันก่อนเกิด
+          </p>
+
+          <div class="bg-rose-50 border-l-4 border-rose-500 p-4 mb-6 rounded-r-lg">
+            <strong class="text-rose-700 text-sm uppercase tracking-wide">🚀 ใช้เมื่อ:</strong>
+            <p class="text-rose-800 text-sm mt-1">
+              หลังออกแบบแผนปฏิบัติการใหม่ (<strong>หลังขั้นตอน 2</strong>) และก่อนขยายผลทั้งองค์กร ให้ใช้ FMEA เป็น “การทดสอบความทนทาน” ของแนวทางแก้ไข
+            </p>
+          </div>
+
+          <div class="bg-white border border-rose-100 rounded-xl p-4 shadow-sm">
+            <div class="text-center mb-3">
+              <span class="text-xs font-bold text-slate-400 uppercase">สูตรคำนวณความเสี่ยง (RPN)</span>
+            </div>
+            <div class="flex flex-wrap justify-center items-center gap-2 md:gap-4 text-center">
+              <div class="bg-rose-100 p-3 rounded-lg w-24">
+                <div class="text-2xl font-bold text-rose-600">S</div>
+                <div class="text-[10px] text-rose-800 font-bold mt-1">ความรุนแรง</div>
+                <div class="text-[9px] text-rose-600">(ร้ายแรงแค่ไหน)</div>
+              </div>
+
+              <div class="text-slate-300 text-xl">✖</div>
+
+              <div class="bg-rose-100 p-3 rounded-lg w-24">
+                <div class="text-2xl font-bold text-rose-600">O</div>
+                <div class="text-[10px] text-rose-800 font-bold mt-1">โอกาสเกิด</div>
+                <div class="text-[9px] text-rose-600">(เกิดบ่อยแค่ไหน)</div>
+              </div>
+
+              <div class="text-slate-300 text-xl">✖</div>
+
+              <div class="bg-rose-100 p-3 rounded-lg w-24">
+                <div class="text-2xl font-bold text-rose-600">D</div>
+                <div class="text-[10px] text-rose-800 font-bold mt-1">ตรวจจับยาก</div>
+                <div class="text-[9px] text-rose-600">(จะรู้ตัวทันไหม)</div>
+              </div>
+
+              <div class="text-slate-400 text-xl">=</div>
+
+              <div class="bg-slate-800 p-3 rounded-lg w-28 shadow-md">
+                <div class="text-2xl font-bold text-white">RPN</div>
+                <div class="text-[10px] text-slate-300 mt-1">ลำดับความเสี่ยง</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-200">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div class="lg:col-span-5 space-y-6">
+          <h2 class="text-3xl font-bold text-slate-800">2. การประเมินและสถานะ</h2>
+          <div class="h-1 w-20 bg-teal-500 rounded-full"></div>
+          <p class="text-slate-600 leading-relaxed font-light italic border-l-4 border-teal-500 pl-4 bg-teal-50/50 p-2 rounded-r-lg">
+            “อ้างอิง <strong>AHRQ HSOPSC 2.0</strong> (10 มิติการประเมิน) ให้กรอก <strong>อัตราคำตอบเชิงบวก (%)</strong> ของแต่ละมิติ กราฟจะชี้ให้เห็นช่องว่างระหว่างความเป็นจริงกับเป้าหมาย (100%)”
+          </p>
+
+          <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 max-h-[500px] overflow-y-auto">
+            <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wide flex items-center gap-2 sticky top-0 bg-slate-100 py-2 border-b">
+              <span>🎚️</span> กรอกอัตราคำตอบเชิงบวก (%)
+            </h4>
+            <div class="space-y-4 text-sm">
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">1. การทำงานเป็นทีม</label>
+                  <span id="val-0" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(0, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">2. อัตรากำลังและความเร็วงาน</label>
+                  <span id="val-1" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(1, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">3. การเรียนรู้ขององค์กร</label>
+                  <span id="val-2" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(2, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">4. การตอบสนองต่อความผิดพลาด</label>
+                  <span id="val-3" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(3, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">5. การสนับสนุนจากหัวหน้างาน</label>
+                  <span id="val-4" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(4, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">6. การสื่อสารเกี่ยวกับความผิดพลาด</label>
+                  <span id="val-5" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(5, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">7. การสื่อสารอย่างเปิดกว้าง</label>
+                  <span id="val-6" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(6, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">8. การรายงานเหตุการณ์ความปลอดภัย</label>
+                  <span id="val-7" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(7, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">9. การสนับสนุนจากผู้บริหารโรงพยาบาล</label>
+                  <span id="val-8" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(8, this.value)">
+              </div>
+
+              <div>
+                <div class="flex justify-between mb-1">
+                  <label class="text-slate-700 font-semibold text-xs">10. การส่งต่อเวรและการแลกเปลี่ยนข้อมูล</label>
+                  <span id="val-9" class="text-teal-600 font-bold text-xs">0.00%</span>
+                </div>
+                <input type="range" min="0" max="100" step="0.01" value="0"
+                  class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                  oninput="updateChartData(9, this.value)">
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-container mt-6">
+            <canvas id="assessmentChart"></canvas>
+          </div>
+          <p class="text-xs text-center text-slate-400 mt-2">เชิงโต้ตอบ: อัตราของคุณเทียบกับเป้าหมาย 100%</p>
+        </div>
+
+        <div class="lg:col-span-7 space-y-6">
+          <h3 class="xl font-bold text-slate-700 border-l-4 border-teal-500 pl-4">วิเคราะห์ช่องว่างและแนวทางแก้ไข</h3>
+          <div class="space-y-4">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="flex items-start gap-3">
+                <div class="bg-red-100 text-red-600 p-2 rounded-lg font-bold text-xl">⚠️</div>
+                <div>
+                  <h4 class="font-bold text-slate-800">การตอบสนองต่อความผิดพลาดแบบไม่ลงโทษ</h4>
+                  <p class="text-sm text-slate-600 mt-1"><strong>ปัญหา:</strong> บุคลากรกลัวการถูกลงโทษจากการรายงาน ทำให้เกิดการรายงานต่ำกว่าความจริง หรือปกปิดความเสี่ยง</p>
+                  <div class="mt-3 bg-white p-3 rounded border border-slate-200 text-sm">
+                    <strong class="text-teal-600">✅ แนวทางแก้ไข:</strong>
+                    <ul class="list-disc list-inside text-slate-500 mt-1">
+                      <li>ผู้บริหารประกาศนโยบาย “ไม่โทษกัน” อย่างชัดเจน</li>
+                      <li>ทำ <strong>การทดสอบแบบแทนกันได้ (Substitution Test)</strong> (หากผู้มีคุณสมบัติใกล้เคียงก็มีโอกาสพลาดเหมือนกัน → มักเป็นปัญหาเชิงระบบ)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="flex items-start gap-3">
+                <div class="bg-amber-100 text-amber-600 p-2 rounded-lg font-bold text-xl">⚡</div>
+                <div>
+                  <h4 class="font-bold text-slate-800">อัตรากำลังและภาระงาน</h4>
+                  <p class="text-sm text-slate-600 mt-1"><strong>ปัญหา:</strong> ภาระงานมากเกินทำให้ล้า และเอื้อต่อ “ทางลัด” (ข้ามขั้นตอน) จนเกิดความเสี่ยง</p>
+                  <div class="mt-3 bg-white p-3 rounded border border-slate-200 text-sm">
+                    <strong class="text-teal-600">✅ แนวทางแก้ไข:</strong>
+                    <ul class="list-disc list-inside text-slate-500 mt-1">
+                      <li>ปรับตารางเวรให้เหมาะสม (หลีกเลี่ยงเวรซ้อน/ดับเบิลชิฟต์)</li>
+                      <li>ใช้ระบบอัตโนมัติช่วยลดงานเอกสาร เพิ่มเวลาให้การดูแลผู้ป่วย</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-slate-800">3. โรดแมปการนำไปใช้</h2>
+        <div class="h-1 w-20 bg-blue-500 mx-auto mt-4 rounded-full"></div>
+        <p class="text-slate-600 mt-4">แผน 3 ระยะ เพื่อเปลี่ยนวัฒนธรรมองค์กรอย่างเป็นระบบ</p>
+      </div>
+
+      <div class="relative max-w-5xl mx-auto pl-8 md:pl-0">
+        <div class="timeline-line hidden md:block" style="left: 50%; transform: translateX(-50%);"></div>
+
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <div class="md:text-right md:pr-12 order-1">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-teal-500 relative">
+              <h3 class="text-xl font-bold text-teal-700">ระยะที่ 1: สร้างความไว้วางใจ</h3>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">ช่วงเวลา: เดือนที่ 1-3</span>
+              <p class="text-sm text-slate-600 mt-3 leading-relaxed">
+                โฟกัสการปรับมุมมองของผู้นำและบุคลากร และทำให้การสนทนาเรื่องความปลอดภัย “เปิด” และ “ปลอดภัย”
+              </p>
+              <div class="mt-4 pt-4 border-t border-slate-100 text-left">
+                <strong class="text-sm text-slate-700 block mb-2">🚀 กิจกรรมหลัก:</strong>
+                <ul class="text-sm text-slate-600 space-y-2">
+                  <li>🔹 <strong>Safety Walkround โดยผู้บริหาร:</strong> ผู้นำลงพื้นที่เพื่อ “รับฟัง” มากกว่า “สั่งการ”</li>
+                  <li>🔹 <strong>แคมเปญเลิกตามหาคนผิด:</strong> เปลี่ยนจาก “ใคร” เป็น “อะไร (ช่องโหว่ของระบบ)”</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="absolute left-0 md:left-1/2 -translate-x-1/2 top-6 w-10 h-10 bg-teal-500 rounded-full border-4 border-white shadow-md z-10 flex items-center justify-center text-white font-bold">1</div>
+          <div class="hidden md:block order-2"></div>
+        </div>
+
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <div class="hidden md:block order-1"></div>
+          <div class="absolute left-0 md:left-1/2 -translate-x-1/2 top-6 w-10 h-10 bg-blue-500 rounded-full border-4 border-white shadow-md z-10 flex items-center justify-center text-white font-bold">2</div>
+          <div class="md:pl-12 order-2">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-blue-500 relative">
+              <h3 class="text-xl font-bold text-blue-700">ระยะที่ 2: ตั้งระบบรายงานให้เข้าที่</h3>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">ช่วงเวลา: เดือนที่ 4-6</span>
+              <p class="text-sm text-slate-600 mt-3 leading-relaxed">
+                ทำให้การรายงาน “ง่าย” และ “มีความหมาย” ลดปัญหา “รายงานแล้วเงียบ”
+              </p>
+              <div class="mt-4 pt-4 border-t border-slate-100 text-left">
+                <strong class="text-sm text-slate-700 block mb-2">🚀 กิจกรรมหลัก:</strong>
+                <ul class="text-sm text-slate-600 space-y-2">
+                  <li>🔹 <strong>ทำแบบฟอร์ม IR ให้สั้น:</strong> ลดเวลาในการกรอกเหลือไม่เกิน 2 นาที</li>
+                  <li>🔹 <strong>รางวัล Good Job:</strong> ชื่นชมผู้รายงานเหตุการณ์เกือบพลาด (Near Miss)</li>
+                  <li>🔹 <strong>วงจรป้อนกลับ:</strong> แจ้งความคืบหน้ามาตรการให้ผู้รายงานภายใน 7 วัน</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="md:text-right md:pr-12 order-1">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-amber-500 relative">
+              <h3 class="text-xl font-bold text-amber-600">ระยะที่ 3: ทำให้ยั่งยืนและเรียนรู้ต่อเนื่อง</h3>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">ช่วงเวลา: ตั้งแต่เดือนที่ 7 เป็นต้นไป</span>
+              <p class="text-sm text-slate-600 mt-3 leading-relaxed">
+                เปลี่ยนจากการแก้ปัญหาเฉพาะหน้า สู่การเรียนรู้เชิงป้องกัน (Proactive Learning)
+              </p>
+              <div class="mt-4 pt-4 border-t border-slate-100 text-left">
+                <strong class="text-sm text-slate-700 block mb-2">🚀 กิจกรรมหลัก:</strong>
+                <ul class="text-sm text-slate-600 space-y-2">
+                  <li>🔹 <strong>Safety Huddle:</strong> ประชุมสั้น 5-10 นาทีทุกเช้าเพื่อทบทวนความเสี่ยง</li>
+                  <li>🔹 <strong>ทำ RCA อย่างจริงจัง:</strong> วิเคราะห์หาสาเหตุเชิงระบบ ไม่โทษบุคคล</li>
+                  <li>🔹 <strong>แชร์ความสำเร็จ:</strong> มองมุม Safety-II และแชร์สิ่งที่ “ทำได้ดี” กับหน่วยงานอื่น</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="absolute left-0 md:left-1/2 -translate-x-1/2 top-6 w-10 h-10 bg-amber-500 rounded-full border-4 border-white shadow-md z-10 flex items-center justify-center text-white font-bold">3</div>
+          <div class="hidden md:block order-2"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <div class="container mx-auto px-4 pb-6">
+    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <p class="text-indigo-700 font-bold italic mb-1">
+        ข้อจำกัดความรับผิด (Disclaimer):
+      </p>
+      <p class="text-slate-600 text-sm leading-relaxed">
+        แผนภาพและเนื้อหาในหน้านี้ถูกสร้างขึ้นโดยความช่วยเหลือของ AI (AI-Assisted) เพื่อเป็นแนวทางเบื้องต้นสำหรับการวิเคราะห์บริการสาธารณสุขและการพัฒนาคุณภาพ
+        ผู้ใช้งานควรตรวจสอบ/ทวนสอบเนื้อหา ปรับให้เข้ากับบริบทองค์กร และอ้างอิงมาตรฐานวิชาชีพที่เกี่ยวข้องก่อนนำไปปฏิบัติจริง
+      </p>
+    </div>
+  </div>
+
+  <script>
+    async function callGemini(prompt) {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+
+      if (!response.ok) {
+        let errData = {};
+        try { errData = await response.json(); } catch (_) {}
+        throw new Error(`Server Error: ${errData?.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // ✅ รองรับหลายรูปแบบ payload กันพัง
+      if (typeof data?.text === 'string') return data.text;
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    }
+
+    function sanitizeLLMHtml(text) {
+      const raw = String(text ?? "")
+        .replace(/```(?:html)?/gi, "")
+        .replace(/```/g, "")
+        .trim();
+
+      return raw.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
+    }
+
+    function stripHtml(html) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      return (tmp.textContent || tmp.innerText || "").trim();
+    }
+
+    // ✅ ใหม่: ดึง “เหตุการณ์/ผลลัพธ์” จากผลวิเคราะห์ขั้นตอนที่ 1 (จาก HTML) ไม่ใช่จาก input
+    function extractEventOutcome(rootEl) {
+      if (!rootEl) return "";
+
+      const normalize = (s) => (s || "").replace(/\s+/g, " ").trim();
+
+      // หา <h3> ของ "1. สรุปเหตุการณ์"
+      const h3s = Array.from(rootEl.querySelectorAll("h3"));
+      const summaryH3 = h3s.find(h => {
+        const t = normalize(h.textContent);
+        return /1\.\s*/.test(t) && (t.includes("สรุปเหตุการณ์") || t.toLowerCase().includes("event summary"));
+      });
+
+      const pickNextMeaningfulText = (startNode) => {
+        if (!startNode) return "";
+        let n = startNode.nextElementSibling;
+        while (n) {
+          if (n.tagName === "H3") break;
+          const txt = normalize(n.textContent);
+          if (txt.length >= 10) return txt;
+          n = n.nextElementSibling;
         }
-    </script>
+        return "";
+      };
+
+      let raw = summaryH3 ? pickNextMeaningfulText(summaryH3) : "";
+      if (!raw) raw = normalize(rootEl.textContent).slice(0, 200);
+
+      // เลือกประโยคแรกแบบ “เหมือนหัวข้อ” ถ้าเป็นไปได้
+      let title = raw;
+      const cutIdx = (() => {
+        const candidates = [
+          title.indexOf("।"),
+          title.indexOf("."),
+          title.indexOf("；"),
+          title.indexOf(";"),
+          title.indexOf("："),
+          title.indexOf(":"),
+          title.indexOf("\n")
+        ].filter(i => i > 0);
+        return candidates.length ? Math.min(...candidates) : -1;
+      })();
+
+      if (cutIdx > 0 && cutIdx < 90) title = title.slice(0, cutIdx + 1);
+      title = normalize(title);
+
+      if (title.length > 90) title = title.slice(0, 90) + "…";
+      return title;
+    }
+
+    // ✅ ใหม่: แสดง “ก้างปลาแบบจริง” เป็น SVG เหนือ fishbone-grid และแสดงเหตุการณ์/ผลลัพธ์ที่หัวลูกศร
+    function upgradeFishbone(rootEl, outcomeText) {
+      if (!rootEl) return;
+
+      const normalize = (s) => (s || "").replace(/\s+/g, " ").trim();
+
+      const escapeXML = (s) =>
+        String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;");
+
+      const wrapByChars = (text, maxChars, maxLines = 3) => {
+        const t = String(text ?? "").trim();
+        if (!t) return [];
+        const lines = [];
+        let i = 0;
+        while (i < t.length && lines.length < maxLines) {
+          lines.push(t.slice(i, i + maxChars));
+          i += maxChars;
+        }
+        if (i < t.length && lines.length) {
+          lines[lines.length - 1] =
+            lines[lines.length - 1].slice(0, Math.max(0, maxChars - 1)) + "…";
+        }
+        return lines;
+      };
+
+      // 1) หา “ส่วนก้างปลา” จากหัวข้อ 3.* ไปจนก่อนหัวข้อถัดไป
+      const findFishboneSection = () => {
+        const h3s = Array.from(rootEl.querySelectorAll("h3"));
+        const idx = h3s.findIndex((h) => {
+          const t = normalize(h.textContent);
+          return (
+            (t.includes("3.") || t.match(/^3\b/)) &&
+            (t.includes("ก้างปลา") ||
+              t.toLowerCase().includes("fishbone") ||
+              t.toLowerCase().includes("ishikawa"))
+          );
+        });
+        if (idx < 0) {
+          const idx2 = h3s.findIndex((h) => {
+            const t = normalize(h.textContent);
+            return (
+              t.includes("ก้างปลา") ||
+              t.toLowerCase().includes("fishbone") ||
+              t.toLowerCase().includes("ishikawa")
+            );
+          });
+          if (idx2 < 0) return null;
+          return { h3: h3s[idx2], nextH3: h3s[idx2 + 1] || null };
+        }
+        return { h3: h3s[idx], nextH3: h3s[idx + 1] || null };
+      };
+
+      const section = findFishboneSection();
+      if (!section || !section.h3) return;
+
+      // 2) พยายามอ่านจาก hidden JSON ก่อน (ทนทานกว่า)
+      const parseFromHiddenJSON = () => {
+        let node = section.h3.nextElementSibling;
+        while (node && node !== section.nextH3) {
+          if (node.id === "fishbone-json") {
+            try {
+              const obj = JSON.parse(node.textContent || "{}");
+              const cats = Array.isArray(obj.categories) ? obj.categories : [];
+              const cleanCats = cats
+                .map((c) => ({
+                  label: normalize(c?.label || ""),
+                  items: Array.isArray(c?.items)
+                    ? c.items.map((x) => normalize(x)).filter(Boolean)
+                    : [],
+                }))
+                .filter((c) => c.label)
+                .slice(0, 6);
+
+              const effect = normalize(obj.effect || "");
+              return { effect, categories: cleanCats };
+            } catch (_) {
+              return null;
+            }
+          }
+          node = node.nextElementSibling;
+        }
+        return null;
+      };
+
+      // 3) สำรอง: อ่านจาก .fishbone-grid/.fishbone-card (ถ้ามี)
+      const parseFromCards = () => {
+        const grid = rootEl.querySelector(".fishbone-grid");
+        if (!grid) return null;
+
+        const cards = Array.from(grid.querySelectorAll(".fishbone-card"));
+        const source = cards.length ? cards : Array.from(grid.children);
+
+        const cats = [];
+        for (const el of source) {
+          const headerEl = el.querySelector ? el.querySelector(".fishbone-header") : null;
+          const label = normalize(headerEl ? headerEl.textContent : "");
+          if (!label) continue;
+
+          const lis = Array.from(el.querySelectorAll("li"))
+            .map((li) => normalize(li.textContent))
+            .filter(Boolean);
+
+          const items = (lis.length
+            ? lis
+            : normalize(el.textContent)
+                .split(/・|\n|、|•|-/g)
+                .map(normalize)
+                .filter((s) => s.length >= 4)
+          )
+            .filter((x) => x && x !== label)
+            .slice(0, 5);
+
+          cats.push({ label, items });
+        }
+
+        const categories = cats.slice(0, 6);
+        if (!categories.length) return null;
+
+        return { effect: "", categories };
+      };
+
+      const jsonData = parseFromHiddenJSON();
+      const cardData = jsonData ? null : parseFromCards();
+
+      const categories = (jsonData?.categories || cardData?.categories || []).slice(0, 6);
+      if (!categories.length) return;
+
+      const effectText = normalize(jsonData?.effect) || normalize(outcomeText) || "เหตุการณ์ / ผลลัพธ์";
+
+      // ✅ สำคัญ: ทำ “ขอบขาว” ให้ข้อความ กันเส้นทับตัวอักษร
+      const textShieldStyle =
+        "paint-order: stroke fill; stroke: #FFFFFF; stroke-width: 6px; stroke-linejoin: round;";
+
+      const makeSVG = (cats, effect) => {
+        const W = 1200, H = 620;
+        const spineY = 310;
+        const spineX1 = 120;
+
+        const box = { x: 900, y: 240, w: 270, h: 140 };
+
+        const usable = cats.slice(0, 6);
+        const n = usable.length || 1;
+
+        const xStart = 300;
+        const xEnd = 860;
+        const step = n > 1 ? (xEnd - xStart) / (n - 1) : 0;
+
+        const topEndY = 120;
+        const botEndY = 500;
+        const endDx = 170;
+
+        const ribsFractions = [0.35, 0.55, 0.75, 0.90];
+
+        const bones = usable.map((c, idx) => {
+          const x = xStart + step * idx;
+          const isTop = idx % 2 === 0;
+
+          const endX = x - endDx;
+          const endY = isTop ? topEndY : botEndY;
+
+          const labelW = 240;
+          const labelH = 32;
+          const labelX = endX - 10;
+          const labelY = isTop ? endY - 46 : endY + 12;
+
+          const label = escapeXML(c.label);
+          const items = (c.items || []).slice(0, 4).map((s) =>
+            s.length > 42 ? s.slice(0, 42) + "…" : s
+          );
+
+          const dx = endX - x;
+          const dy = endY - spineY;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len, uy = dy / len;
+
+          let px = -uy, py = ux;
+          const outwardSign = isTop ? -1 : 1;
+          px *= outwardSign; py *= outwardSign;
+
+          // ✅ ทำให้เส้นย่อยยาวขึ้น และเว้นระยะข้อความเพิ่ม ลดการทับเส้น
+          const ribLine = 46;
+          const ribTextGap = 14;
+
+          const ribs = items.map((txt, i) => {
+            const f = ribsFractions[Math.min(i, ribsFractions.length - 1)];
+
+            const sx = x + dx * f;
+            const sy = spineY + dy * f;
+
+            const ex = sx + px * ribLine;
+            const ey = sy + py * ribLine;
+
+            const tx = ex + px * ribTextGap;
+            const ty = ey + (isTop ? -6 : 14);
+
+            return `
+              <line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="#475569" stroke-width="2" />
+              <text x="${tx}" y="${ty}"
+                    font-family="sans-serif"
+                    font-size="12"
+                    font-weight="600"
+                    fill="#0F172A"
+                    style="${textShieldStyle}">
+                ${escapeXML(txt)}
+              </text>
+            `;
+          }).join("");
+
+          return `
+            <line x1="${x}" y1="${spineY}" x2="${endX}" y2="${endY}" stroke="#334155" stroke-width="3" />
+            <rect x="${labelX}" y="${labelY}" width="${labelW}" height="${labelH}" rx="10"
+                  fill="#FFFFFF" stroke="#94A3B8" stroke-width="2" />
+            <text x="${labelX + 12}" y="${labelY + 22}" font-family="sans-serif" font-size="14" font-weight="800"
+                  fill="#0F172A" style="${textShieldStyle}">
+              ${label}
+            </text>
+            ${ribs}
+          `;
+        }).join("");
+
+        const headLines = wrapByChars(effect, 14, 3).map(escapeXML);
+        const headTspans = headLines.map((t, i) =>
+          `<tspan x="${box.x + box.w / 2}" dy="${i === 0 ? 0 : 20}">${t}</tspan>`
+        ).join("");
+
+        return `
+          <svg viewBox="0 0 ${W} ${H}" class="w-full h-auto" preserveAspectRatio="xMinYMid meet">
+            <defs>
+              <marker id="ishikawaArrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                <path d="M0,0 L12,6 L0,12 Z" fill="#0EA5E9" />
+              </marker>
+            </defs>
+
+            <circle cx="${spineX1}" cy="${spineY}" r="10" fill="#0F172A" />
+            <text x="${spineX1}" y="${spineY - 18}" font-family="sans-serif" font-size="12" font-weight="700"
+                  fill="#475569" text-anchor="middle" style="${textShieldStyle}">
+              สาเหตุ
+            </text>
+
+            <line x1="${spineX1}" y1="${spineY}" x2="${box.x}" y2="${spineY}" stroke="#0F172A" stroke-width="6"
+                  marker-end="url(#ishikawaArrow)" />
+
+            <rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="16"
+                  fill="#FFFFFF" stroke="#0F172A" stroke-width="3" />
+
+            <text x="${box.x + box.w / 2}" y="${box.y + 44}"
+                  font-family="sans-serif" font-size="14" font-weight="900"
+                  fill="#0F172A" text-anchor="middle" style="${textShieldStyle}">
+              เหตุการณ์ / ผลลัพธ์
+            </text>
+
+            <text x="${box.x + box.w / 2}" y="${box.y + 78}"
+                  font-family="sans-serif" font-size="18" font-weight="900"
+                  fill="#0F172A" text-anchor="middle" style="${textShieldStyle}">
+              ${headTspans}
+            </text>
+
+            ${bones}
+
+            <text x="${spineX1 + 10}" y="${spineY + 26}" font-family="sans-serif" font-size="12" fill="#64748B"
+                  style="${textShieldStyle}">
+              Ishikawa / ก้างปลา (สาเหตุหลัก → ผลลัพธ์)
+            </text>
+          </svg>
+        `;
+      };
+
+      const vizId = "fishbone-viz";
+      const existing = rootEl.querySelector("#" + vizId);
+      if (existing) existing.remove();
+
+      const wrapper = document.createElement("div");
+      wrapper.id = vizId;
+      wrapper.className =
+        "fishbone-viz-wrap w-full bg-white rounded-xl border border-slate-200 p-3 mb-4 shadow-sm";
+      wrapper.innerHTML = `
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-base">🐟</span>
+          <div class="text-xs font-bold text-slate-700 uppercase tracking-wide">แผนผังก้างปลา (Ishikawa Diagram)</div>
+        </div>
+        ${makeSVG(categories, effectText)}
+        <div class="text-[11px] text-slate-500 mt-2">
+          หมายเหตุ: ข้อความวิเคราะห์ด้านล่าง (การ์ด/รายการ) ยังคงแสดงไว้เหมือนเดิม
+        </div>
+      `;
+
+      section.h3.insertAdjacentElement("afterend", wrapper);
+    }
+
+    async function startFullAnalysis() {
+      const input = document.getElementById('scenarioInput').value;
+      const runButton = document.getElementById('combinedRunButton');
+      const spinner = document.getElementById('runSpinner');
+      const resultDiv = document.getElementById('analyzeResult');
+      const planInput = document.getElementById('planInput');
+      const planResultDiv = document.getElementById('planResult');
+
+      if (!input.trim()) { alert("กรุณากรอกข้อมูลเหตุการณ์"); return; }
+
+      runButton.disabled = true;
+      spinner.classList.remove('hidden');
+      resultDiv.classList.add('hidden');
+      planResultDiv.classList.add('hidden');
+      planInput.value = 'กำลังวิเคราะห์...';
+
+      try {
+        // ✅ ขั้นตอน 1: ต้องมี Swiss cheese แน่ ๆ
+        const promptAnalysis = `
+คุณคือผู้เชี่ยวชาญด้านความปลอดภัยผู้ป่วย (ผู้รับผิดชอบ RCA)
+โปรดวิเคราะห์สถานการณ์ทางการแพทย์ต่อไปนี้เป็นภาษาไทย: "${input}"
+
+【สำคัญ】
+- ส่งออกเป็น HTML เท่านั้น ห้ามใช้ Markdown และห้ามใส่ \`\`\`
+- ต้องมี 5 ส่วนตามลำดับนี้ “เท่านั้น” และห้ามสลับลำดับ:
+  1) สรุปเหตุการณ์
+  2) ไทม์ไลน์เหตุการณ์
+  3) แผนผังก้างปลา (ใช้ <div class="fishbone-grid">)
+  4) วิเคราะห์ทำไม-ทำไม (5 Whys)
+  5) วิเคราะห์โมเดลสวิสชีส (ตาราง: ชั้นระบบ / ประเภท / รู(ช่องโหว่) / มาตรการป้องกัน)
+
+【รูปแบบบังคับ (หัวข้อใช้ถ้อยคำนี้ตรง ๆ)】
+<h3 class="font-bold text-lg text-teal-700 mb-2">1. สรุปเหตุการณ์</h3>
+<h3 class="font-bold text-lg text-teal-700 mb-2">2. ไทม์ไลน์เหตุการณ์</h3>
+<h3 class="font-bold text-lg text-amber-700 mb-2">3. แผนผังก้างปลา (แผนผังอิชิกาวะ)</h3>
+<div class="fishbone-grid">
+  <!-- แต่ละหมวดต้องอยู่ในรูปแบบนี้ -->
+  <div class="fishbone-card">
+    <div class="fishbone-header">ชื่อหมวด (ตัวอย่าง: คน/เครื่องมือ/วิธีการ/วัสดุ/สภาพแวดล้อม/การวัด)</div>
+    <ul><li>ปัจจัย...</li></ul>
+  </div>
+</div>
+
+【ข้อกำหนดเพิ่มเติมสำหรับก้างปลา】
+- หลังหัวข้อ 3. แผนผังก้างปลา (แผนผังอิชิกาวะ) ให้ใส่ hidden JSON ต่อไปนี้ “เสมอ” (ยังเป็น HTML ไม่แสดงผล):
+  <pre id="fishbone-json" style="display:none">
+  {"effect":"(สรุปเหตุการณ์/ผลลัพธ์แบบสั้น)","categories":[{"label":"บุคลากร","items":["...","..."]},{"label":"ระบบ/กระบวนการ","items":["..."]}]}
+  </pre>
+- categories ได้สูงสุด 6 หมวด และ items ต่อหมวดสูงสุด 5 รายการ (ประโยคสั้น กระชับ)
+
+<h3 class="font-bold text-lg text-pink-600 mb-2">4. วิเคราะห์ทำไม-ทำไม (5 Whys)</h3>
+<h3 class="font-bold text-lg text-green-700 mb-2">5. วิเคราะห์โมเดลสวิสชีส</h3>
+<table class="rca-table w-full">
+  <thead><tr><th>ชั้นระบบ</th><th>ประเภท</th><th>รู (ช่องโหว่)</th><th>มาตรการป้องกัน (ข้อเสนอ)</th></tr></thead>
+  <tbody>...</tbody>
+</table>
+        `.trim();
+
+        const resText = await callGemini(promptAnalysis);
+        const htmlContent = sanitizeLLMHtml(resText);
+
+        resultDiv.innerHTML = htmlContent;
+        resultDiv.classList.remove('hidden');
+
+        // ✅ ใหม่: หัวลูกศรใช้ “เหตุการณ์/ผลลัพธ์” ที่ดึงจากผลวิเคราะห์ (ไม่ใช้ข้อความ input)
+        const outcomeText = extractEventOutcome(resultDiv);
+        upgradeFishbone(resultDiv, outcomeText);
+
+        const cleanText = stripHtml(htmlContent);
+        planInput.value = 'กำลังสร้างแผนปฏิบัติการ...';
+
+        // ✅ ขั้นตอน 2: ต้องมี 4 ส่วนแน่ ๆ
+        const promptPlan = `
+คุณคือผู้จัดการความปลอดภัยของโรงพยาบาล
+จากข้อมูลการวิเคราะห์ต่อไปนี้ ให้สร้างผลลัพธ์เป็น “HTML ภาษาไทยเท่านั้น” และต้องมี 4 ส่วนตามลำดับนี้ (ห้ามสลับ) ห้ามใช้ Markdown
+
+ข้อมูลการวิเคราะห์:
+"${cleanText}"
+
+(1) <h3>1. PDSA</h3>
+  - ต้องแสดงเป็น “ตาราง” เท่านั้น (ห้ามทำ PDSA เป็นรายการล้วน)
+  - ต้องใช้รูปแบบตาราง HTML ต่อไปนี้ (ต้องมี thead+tbody):
+    <table class="pdsatable w-full">
+      <thead><tr><th>ขั้นตอน</th><th>รายละเอียด</th></tr></thead>
+      <tbody>
+        <tr><td>วางแผน (Plan)</td><td><ul><li>...</li></ul></td></tr>
+        <tr><td>ทำ (Do)</td><td><ul><li>...</li></ul></td></tr>
+        <tr><td>ศึกษา (Study)</td><td><ul><li>...</li></ul></td></tr>
+        <tr><td>ปรับปรุง (Act)</td><td><ul><li>...</li></ul></td></tr>
+      </tbody>
+    </table>
+
+(2) <h3>2. Action Plan</h3>
+  - ตาราง (ไม่เกิน 5 คอลัมน์)
+  - คอลัมน์: มาตรการ / ผู้รับผิดชอบ / กำหนดเสร็จ / KPI(ตัวชี้วัดผลลัพธ์) / ความเสี่ยงและแนวทางลดเสี่ยง
+
+(3) <h3>3. Initiative Ideas</h3>
+  - แบ่งเป็น Quick Wins(0-30 วัน), ระยะกลาง(1-3 เดือน), ระยะยาว(3-12 เดือน)
+
+(4) <h3>4. Conclusion & Recommendations</h3>
+  - สรุป 5 ข้อเรียงตามความสำคัญ
+  - ตอนท้ายต้องมี “ก้าวถัดไป (ภายใน 72 ชั่วโมง)” เสมอ
+        `.trim();
+
+        const resPlan = await callGemini(promptPlan);
+        const planHtml = sanitizeLLMHtml(resPlan);
+
+        planResultDiv.innerHTML = planHtml;
+        planResultDiv.classList.remove('hidden');
+        planInput.value = '✔ เสร็จสิ้นแล้ว';
+
+      } catch (error) {
+        console.error(error);
+        alert("เกิดข้อผิดพลาด: " + error.message);
+        planInput.value = "ล้มเหลว";
+      } finally {
+        spinner.classList.add('hidden');
+        runButton.disabled = false;
+      }
+    }
+
+    function exportToWord() {
+      const scenario = document.getElementById('scenarioInput').value;
+      const riskAnalysis = document.getElementById('analyzeResult').innerHTML;
+      const actionPlan = document.getElementById('planResult').innerHTML;
+
+      if (!actionPlan) { alert("กรุณาวิเคราะห์ให้เสร็จก่อน"); return; }
+
+      const content = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>แผนปฏิบัติการความปลอดภัยผู้ป่วย</title></head>
+        <body style="font-family: Arial, sans-serif;">
+          <h1>รายงานแผนปฏิบัติการความปลอดภัย</h1>
+          <h2>1. การวิเคราะห์ความเสี่ยง</h2>
+          <p><strong>สถานการณ์:</strong> ${scenario}</p>
+          ${riskAnalysis}
+          <h2>2. แผนปฏิบัติการและข้อเสนอการปรับปรุง</h2>
+          ${actionPlan}
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Safety_Plan_${new Date().toISOString().slice(0,10)}.doc`;
+      link.click();
+    }
+
+    // Chart.js (ถ้าหน้านี้มีกราฟอยู่)
+    if (window.Chart && document.getElementById('assessmentChart')) {
+      Chart.defaults.font.family = "'Noto Sans Thai', sans-serif";
+      const ctx = document.getElementById('assessmentChart');
+      const assessmentChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['การทำงานเป็นทีม', 'อัตรากำลัง', 'การเรียนรู้ขององค์กร', 'ตอบสนองต่อความผิดพลาด', 'หน้างานสนับสนุน', 'สื่อสารเรื่องความผิดพลาด', 'สื่อสารเปิดกว้าง', 'การรายงาน', 'ผู้บริหารสนับสนุน', 'ส่งต่อ/แลกเปลี่ยนข้อมูล'],
+          datasets: [
+            { label: 'สถานะปัจจุบันของหน่วยงาน (%)', data: [0,0,0,0,0,0,0,0,0,0], backgroundColor: '#0D9488', borderRadius: 4 },
+            { label: 'เป้าหมาย (100%)', data: [100,100,100,100,100,100,100,100,100,100], backgroundColor: '#E2E8F0', borderRadius: 4 }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { x: { suggestedMin: 0, max: 100 }, y: { grid: { display: false } } }
+        }
+      });
+
+      window.updateChartData = function(index, value) {
+        const el = document.getElementById(`val-${index}`);
+        if (el) el.innerText = parseFloat(value).toFixed(2) + '%';
+        assessmentChart.data.datasets[0].data[index] = value;
+        assessmentChart.update();
+      }
+    }
+  </script>
+
 </body>
 </html>
+````
