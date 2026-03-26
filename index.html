@@ -1378,7 +1378,7 @@
             <div class="tiers5-boxes">${renderBoxes(layer.boxes)}</div>
           </div>
         </div>
-        <div class="tiers5-arrow">⬇ ไล่ลงสู่ชั้นถัดไป</div>
+        
       `).join('');
 
       const afHtml = `
@@ -1469,6 +1469,10 @@
   6) วิเคราะห์โมเดลสวิสชีส
 - ใช้ภาษาวิชาชีพด้านคุณภาพและความปลอดภัยในโรงพยาบาล
 - หลีกเลี่ยงการกล่าวโทษบุคคลโดยตรง ให้เน้นปัจจัยเชิงระบบ กระบวนการ งาน ทีม และการจัดการ
+- คงหัวข้อหลัก หัวข้อย่อย labels และ box titles ที่กำหนดไว้เป็นภาษาอังกฤษตามแบบ
+- แต่คำอธิบายทั้งหมดในเนื้อหา เช่น bullet items, narrative, problem, error_type, potential_change, chronology.event ต้องเป็นภาษาไทย
+- ห้ามใช้ประโยคอธิบายเป็นภาษาอังกฤษ ยกเว้นคำหัวข้อหรือศัพท์เทคนิคจำเป็น
+- หากใช้ศัพท์เทคนิค ให้ใช้ภาษาไทยเป็นหลัก และใส่คำอังกฤษในวงเล็บได้เมื่อจำเป็น
 
 【รูปแบบบังคับ (หัวข้อใช้ถ้อยคำนี้ตรง ๆ)】
 <h3 class="font-bold text-lg text-teal-700 mb-2">1. สรุปเหตุการณ์</h3>
@@ -1524,6 +1528,10 @@
 - Tier 1: individuals เช่น staff factors, patient factors, knowledge, skill, fatigue, literacy
 - Active failure: care management problem / unsafe act ที่ทำให้เหตุการณ์เกิดขึ้นจริง
 - Chronology: ลำดับเหตุการณ์ตามข้อเท็จจริง
+- ให้คงชื่อ tier, label และ box title เป็นภาษาอังกฤษ
+- items ทุกข้อให้เขียนเป็นภาษาไทย
+- active_failure.problem, active_failure.error_type, active_failure.potential_change ให้เขียนเป็นภาษาไทย
+- chronology.event ให้เขียนเป็นภาษาไทย
 
 【ข้อกำหนดคุณภาพ】
 - ถ้าข้อมูลไม่พอ ให้ระบุว่า “ต้องการข้อมูลเพิ่ม” อย่างมืออาชีพ แทนการเดา
