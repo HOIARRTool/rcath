@@ -912,23 +912,45 @@
 </div>
 <script>
     async function callGemini(prompt) {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      });
-
-      if (!response.ok) {
-        let errData = {};
-        try { errData = await response.json(); } catch (_) {}
-        throw new Error(`Server Error: ${errData?.error?.message || response.statusText}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
+    
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+          signal: controller.signal
+        });
+    
+        const data = await response.json().catch(() => ({}));
+    
+        if (!response.ok) {
+          const tried = Array.isArray(data?.error?.triedModels)
+            ? data.error.triedModels
+                .map(x => `${x.model} (${x.status})`)
+                .join(' -> ')
+            : '';
+    
+          throw new Error(
+            `${data?.error?.message || response.statusText}` +
+            (tried ? ` | tried: ${tried}` : '')
+          );
+        }
+    
+        if (typeof data?.text === 'string' && data.text.trim()) {
+          return data.text;
+        }
+    
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error('AI ใช้เวลานานเกินกำหนด กรุณาลองใหม่');
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
       }
-
-      const data = await response.json();
-
-      // ✅ รองรับหลายรูปแบบ payload กันพัง
-      if (typeof data?.text === 'string') return data.text;
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     }
 
     function sanitizeLLMHtml(text) {
