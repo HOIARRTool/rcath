@@ -1302,7 +1302,13 @@
         .replace(/'/g, "&#39;");
 
       const h3s = Array.from(rootEl.querySelectorAll("h3"));
-      const idx = h3s.findIndex((h) => /5\s*tiers/i.test(normalize(h.textContent)) || /contributory factors/i.test(normalize(h.textContent)));
+      const idx = h3s.findIndex((h) => {
+          const t = normalize(h.textContent);
+          return (
+            /4\.\s*วิเคราะห์\s*5\s*tiers/i.test(t) ||
+            /5\s*tiers/i.test(t)
+          );
+        });
       if (idx < 0) return;
 
       const sectionH3 = h3s[idx];
@@ -1321,7 +1327,10 @@
         }
         node = node.nextElementSibling;
       }
-      if (!data) return;
+      if (!data) {
+          console.warn("5 Tiers JSON not found or invalid under:", sectionH3.textContent);
+          return;
+        }
 
       const normalizeBoxes = (obj) => {
         const boxes = Array.isArray(obj?.boxes) ? obj.boxes : [];
@@ -1473,7 +1482,10 @@
 - แต่คำอธิบายทั้งหมดในเนื้อหา เช่น bullet items, narrative, problem, error_type, potential_change, chronology.event ต้องเป็นภาษาไทย
 - ห้ามใช้ประโยคอธิบายเป็นภาษาอังกฤษ ยกเว้นคำหัวข้อหรือศัพท์เทคนิคจำเป็น
 - หากใช้ศัพท์เทคนิค ให้ใช้ภาษาไทยเป็นหลัก และใส่คำอังกฤษในวงเล็บได้เมื่อจำเป็น
-
+- ห้ามข้าม <pre id="tiers5-json" style="display:none">...</pre> โดยเด็ดขาด
+- หลังหัวข้อ “4. วิเคราะห์ 5 Tiers Contributory Factors” ต้องมี <pre id="tiers5-json" style="display:none"> เป็น element ถัดไปทันที
+- JSON ภายใน tiers5-json ต้องเป็น JSON ที่ parse ได้จริง ห้ามมี comment ห้ามมี trailing comma และห้ามใช้ Markdown
+- ถ้าข้อมูลไม่พอ ให้ใส่ "ต้องการข้อมูลเพิ่ม" ใน items/problem/event แทนการละเว้น key
 【รูปแบบบังคับ (หัวข้อใช้ถ้อยคำนี้ตรง ๆ)】
 <h3 class="font-bold text-lg text-teal-700 mb-2">1. สรุปเหตุการณ์</h3>
 <p>...</p>
